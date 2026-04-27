@@ -356,9 +356,6 @@
 
         .fade-content { animation: fadeIn 0.3s ease-out; }
     </style>
-    <script data-goatcounter="https://jenish.goatcounter.com/count"
-        async src="//gc.zgo.at/count.js"></script>
-
 </head>
 <body>
     <div id="screen-onboard" class="screen">
@@ -389,7 +386,18 @@
         <div id="previousYearsHome" style="display: none; margin-top: 14px;">
             <button class="secondary-btn" onclick="showArchiveHome()">View Previous Years</button>
         </div>
-
+<div style="margin-top: 24px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px;">
+    <p style="font-size: 0.9rem; color: var(--muted); margin-bottom: 12px;">Data Management</p>
+    <div style="display: flex; gap: 10px;">
+        <button class="secondary-btn" onclick="exportBackup()" style="padding: 12px; font-size: 0.9rem;">
+            Export Backup
+        </button>
+        <label class="secondary-btn" style="padding: 12px; font-size: 0.9rem; cursor: pointer; text-align: center; flex: 1;">
+            Restore Backup
+            <input type="file" accept=".json" style="display: none;" onchange="importBackup(event)">
+        </label>
+    </div>
+</div>
         <a href="https://jenishestmoizavut.github.io/jenish.one" target="_blank" class="secondary-btn-link">
             Visit the Developer's Hub
         </a>
@@ -523,6 +531,7 @@
         <div id="archiveList" class="archive-list"></div>
         <button class="secondary-btn" onclick="nav('screen-onboard')">Back</button>
     </div>
+
     
     <div id="warpOverlay" class="warp-overlay">
         <div class="warp-core" id="warpCore"></div>
@@ -1179,10 +1188,73 @@ if ('serviceWorker' in navigator) {
             .catch(err => console.log('Service Worker registration failed', err));
     });
 }
+// --- BACKUP & RESTORE SYSTEM ---
+
+async function exportBackup() {
+    try {
+        // Fetch current active vault and archives
+        const activeVaultData = await loadFromDB('activeVault');
+        const archivesData = await loadFromDB('archives') || [];
+        
+        // Package them into a single object
+        const backupData = { 
+            activeVault: activeVaultData, 
+            archives: archivesData, 
+            exportDate: new Date().toISOString() 
+        };
+        
+        // Create a downloadable JSON file
+        const blob = new Blob([JSON.stringify(backupData)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `MemStore_Backup_${getDateKey()}.json`;
+        document.body.appendChild(a);
+        a.click();
+        
+        // Cleanup
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    } catch (error) {
+        alert("Failed to export backup. Ensure you have an active vault.");
+    }
+}
+
+function importBackup(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    if (!confirm("Warning: Restoring a backup will overwrite your current vault. Do you want to proceed?")) {
+        event.target.value = ''; // Reset input
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        try {
+            const data = JSON.parse(e.target.result);
+            
+            // Validate it's a MemStore backup file
+            if (data.activeVault !== undefined && data.archives !== undefined) {
+                // Restore to IndexedDB
+                await saveToDB('activeVault', data.activeVault);
+                await saveToDB('archives', data.archives);
+                
+                alert('Backup restored successfully! The timeline will now refresh.');
+                location.reload(); // Refresh the page to load the restored state
+            } else {
+                alert('Invalid backup file format. Are you sure this is a MemStore backup?');
+            }
+        } catch (err) {
+            alert('Error reading the backup file. It might be corrupted.');
+        }
+    };
+    reader.readAsText(file);
+}
     </script>
 <footer style="margin-top: auto; padding: 40px 0 20px 0; text-align: center; opacity: 0.4; font-size: 0.8rem; letter-spacing: 0.5px;">
     <p style="margin: 0;">© 2026 Jenish</p>
     <p style="margin: 5px 0 0 0;">Created by Jenish with Gemini & ChatGPT</p>
-</footer>
+</footer>	
 </body>
 </html>
