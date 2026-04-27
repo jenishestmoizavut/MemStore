@@ -1,4 +1,4 @@
-const CACHE_NAME = 'memstore-v3';
+const CACHE_NAME = 'memstore-v4';
 const ASSETS = [
   'index.html',
   'manifest.json',
