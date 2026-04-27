@@ -404,16 +404,22 @@
     </div>
 
     <div id="screen-setup" class="screen">
+<div class="top-bar" style="justify-content: flex-start; margin-bottom: 20px;">
+    <button class="menu-btn" style="flex: 0 0 auto; padding: 8px 16px;" onclick="checkAppState()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+        Back
+    </button>
+</div>
         <h1>When does year zero start?</h1>
         <p class="subtitle">Choose your timeline.</p>
         <div class="radio-group">
             <label class="radio-label"><input type="radio" name="startOption" value="today" checked onclick="toggleCustomDate(false)"> Start Today</label>
-            <label class="radio-label"><input type="radio" name="startOption" value="newyear" onclick="toggleCustomDate(false)"> Start from New Year (Jan 1, 2026)</label>
+<label class="radio-label" id="newYearLabel"><input type="radio" name="startOption" value="newyear" onclick="toggleCustomDate(false)"> Start from New Year (1st Jan) </label>
             <label class="radio-label" style="flex-wrap: wrap;"><input type="radio" name="startOption" value="custom" onclick="toggleCustomDate(true)"> Custom / Birthday <input type="date" id="customDateInput"></label>
         </div>
 <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 12px; padding: 14px; margin-bottom: 24px; text-align: left;">
     <p style="margin: 0; font-size: 0.85rem; color: #fca5a5; line-height: 1.4;">
-        ⚠️ <b>Important:</b> Your memories are stored directly in this browser's <b>IndexedDB</b>. Clearing your browser data, "Resetting" the app, or deleting the site's storage will wipe your vault forever. <b>Do not do it without making a backup on the homepage!!</b>
+        ⚠️ <b>Important:</b> Your memories are stored directly in this browser's <b>IndexedDB</b>. Clearing your browser data, "Resetting" the app, or deleting the site's storage will wipe your vault forever. <b>Do not do it!</b>
     </p>
 </div>
         <button class="primary-btn" onclick="initializeVault()">Lock It In</button>
@@ -462,15 +468,17 @@
                 <div class="sealed-time" id="sealedTimeLabel">20:27:34</div>
                 <div id="unsealContainer" style="display: none;"><button class="unseal-btn" onclick="unsealToday()">Edit before the day ends!</button></div>
             </div>
-        </div>
-
-        <div id="finalPrompt" class="final-prompt">
+        </div><div id="finalPrompt" class="final-prompt">
             <div class="final-prompt-title">The final seal is ready.</div>
             <p class="final-prompt-copy">Your last entry is locked. Step through when you are ready to open the year.</p>
             <button class="primary-btn" onclick="enterTimeCapsule()">Enter the Time Machine</button>
         </div>
 
         <div class="home-menu-bar">
+            <button class="menu-btn" onclick="checkAppState()" title="Return to Main Menu">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                Home
+            </button>
             <button class="menu-btn" onclick="openEditor(getDateKey())" title="Return to today's entry">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
                 Today
@@ -480,9 +488,13 @@
                 Archives
             </button>
         </div>
-    </div>
-
-    <div id="screen-unlocked" class="screen">
+    </div> <div id="screen-unlocked" class="screen">
+<div class="top-bar" style="justify-content: flex-start; margin-bottom: 20px;">
+    <button class="menu-btn" style="flex: 0 0 auto; padding: 8px 16px;" onclick="checkAppState()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+        Home
+    </button>
+</div>
         <div id="arrivalPhase">
             <h1>Timeline Reconstructed.</h1>
             <p class="subtitle">Compiling your recorded memories...</p>
@@ -526,13 +538,17 @@
     </div>
 
     <div id="screen-archive" class="screen">
+<div class="top-bar" style="justify-content: flex-start; margin-bottom: 20px;">
+    <button class="menu-btn" style="flex: 0 0 auto; padding: 8px 16px;" onclick="checkAppState()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+        Back
+    </button>
+</div>
         <h1>Previous Years</h1>
         <p class="subtitle">Return to an older time capsule.</p>
         <div id="archiveList" class="archive-list"></div>
-        <button class="secondary-btn" onclick="nav('screen-onboard')">Back</button>
-    </div>
-
-    
+          </div>
+ 
     <div id="warpOverlay" class="warp-overlay">
         <div class="warp-core" id="warpCore"></div>
         <div class="flash-bang" id="flashBang"></div>
@@ -618,9 +634,16 @@
             checkAppState(); 
         }
 
-        function checkAppState() {
+      function checkAppState() {
             nav('screen-onboard'); 
             
+            // Set dynamic current year in the UI
+            const currentYear = new Date().getFullYear();
+            const nyLabel = document.getElementById('newYearLabel');
+            if (nyLabel) {
+                nyLabel.innerHTML = `<input type="radio" name="startOption" value="newyear" onclick="toggleCustomDate(false)"> Start from New Year (Jan 1, ${currentYear})`;
+            }
+
             const tracker = document.getElementById('activeVaultTracker');
             const beginBtn = document.getElementById('btnBeginExperiment');
 
@@ -667,8 +690,8 @@
                 if (!custom) return alert("Please select a date.");
                 startDateStr = custom;
             }
-            memData = { startDate: startDateStr, entries: {}, drafts: {}, timestamps: {} };
-            
+// Generates a unique ID so vaults on the same date never overwrite each other
+            memData = { id: Date.now().toString(), startDate: startDateStr, entries: {}, drafts: {}, timestamps: {} };            
             saveToDB('activeVault', memData); 
             openActiveVault(); 
         }
@@ -769,15 +792,20 @@
             return startYear === finalYear ? `${startYear}` : `${startYear}-${finalYear}`;
         }
 
-        function archiveCurrentVault() {
+     function archiveCurrentVault() {
+            // Assign an ID if it's a legacy vault from before this update
+            if (!memData.id) memData.id = Date.now().toString();
+            
             const snapshot = { ...memData, completedAt: new Date().toISOString(), label: getCapsuleLabel(memData) };
-            archives = archives.filter(capsule => capsule.startDate !== snapshot.startDate);
+            
+            // FIX: Filter by unique ID, NOT startDate. This prevents overwrites.
+            archives = archives.filter(capsule => capsule.id !== snapshot.id);
             archives.unshift(snapshot);
+            
             saveToDB('archives', archives); 
             refreshPreviousYearsButton();
             return snapshot;
         }
-
         function renderApp() {
             const todayStr = getDateKey();
             const finalDateStr = getFinalDateStr();
