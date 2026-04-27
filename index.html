@@ -1,0 +1,1187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <meta name="theme-color" content="#020617">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" href="logo.png">
+
+<link rel="apple-touch-icon" href="logo.png">
+    <title>MemStore | One Good Thing</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #020617;
+            --card: rgba(30, 41, 59, 0.5);
+            --text: #f8fafc;
+            --muted: #64748b;
+            --accent: #6366f1;
+            --accent-glow: rgba(99, 102, 241, 0.4);
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Outfit', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            overflow-x: hidden;
+            transition: background 0.5s;
+        }
+
+        .screen { display: none; width: 100%; max-width: 500px; text-align: center; animation: fadeIn 0.4s ease-out; }
+        .screen.active { display: block; }
+
+        h1 { font-size: 2.8rem; font-weight: 800; margin: 20px 0 10px 0; letter-spacing: -1px; }
+        .subtitle { color: var(--muted); margin-bottom: 30px; font-size: 1.1rem; line-height: 1.5; }
+
+        button.primary-btn {
+            width: 100%; background: var(--accent); color: white; border: none;
+            padding: 16px; border-radius: 14px; font-weight: 600; font-size: 1.1rem;
+            cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 20px var(--accent-glow);
+        }
+        button.primary-btn:hover { transform: translateY(-2px); filter: brightness(1.1); }
+        
+        .radio-group { display: flex; flex-direction: column; gap: 12px; margin-bottom: 30px; }
+        .radio-label {
+            background: var(--card); padding: 18px; border-radius: 14px;
+            border: 1px solid rgba(255,255,255,0.1); cursor: pointer;
+            display: flex; align-items: center; gap: 10px; transition: 0.2s;
+        }
+        .radio-label:hover { border-color: var(--accent); }
+        input[type="radio"] { accent-color: var(--accent); transform: scale(1.2); }
+        input[type="date"] {
+            background: var(--bg); color: white; border: 1px solid rgba(255,255,255,0.2);
+            padding: 10px; border-radius: 8px; font-family: inherit; margin-top: 10px;
+            display: none; width: 90%;
+        }
+
+        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        
+        .theme-picker { 
+            width: 24px; height: 24px; border-radius: 50%; 
+            overflow: hidden; border: 2px solid rgba(255,255,255,0.3);
+            position: relative; cursor: pointer; transition: transform 0.2s;
+            box-shadow: 0 0 10px var(--accent-glow);
+        }
+        .theme-picker:hover { transform: scale(1.15); border-color: #fff; }
+        .theme-picker input[type="color"] {
+            position: absolute; top: -10px; left: -10px;
+            width: 50px; height: 50px; cursor: pointer; border: none; padding: 0;
+            background: transparent;
+        }
+
+        .progress-container { width: 100%; background: var(--card); border-radius: 10px; height: 10px; overflow: hidden; margin-bottom: 10px; }
+        .progress-bar { height: 100%; background: var(--accent); width: 0%; transition: width 0.5s ease, background-color 0.3s; }
+        .progress-text { font-size: 0.85rem; color: var(--muted); text-align: left; margin-bottom: 25px; }
+
+        .grid-wrapper {
+            background: var(--card); padding: 20px; border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.05); margin-bottom: 30px;
+        }
+        .calendar-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(12px, 1fr));
+            gap: 4px; justify-content: center;
+        }
+        .day-block {
+            aspect-ratio: 1; background: #1e293b; border-radius: 3px;
+            cursor: pointer; transition: 0.2s background-color, 0.2s border-color, 0.2s box-shadow; position: relative;
+        }
+        .day-block.filled { background: var(--accent); box-shadow: 0 0 6px var(--accent-glow); }
+        .day-block.missed { border: 1px solid var(--accent); background: transparent; }
+        .day-block.today { border: 2px solid white; }
+        .day-block.locked { opacity: 0.3; cursor: default; }
+
+        .input-wrap { 
+            background: var(--card); border-radius: 20px; padding: 20px; 
+            border: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px;
+            min-height: 220px; position: relative; overflow: hidden;
+        }
+        .active-date-label { font-weight: 700; margin-bottom: 10px; color: var(--accent); text-align: left; display: block; transition: color 0.3s; }
+        
+        textarea {
+            width: 100%; height: 100px; background: transparent; border: none;
+            color: white; font-family: inherit; font-size: 1.1rem; resize: none;
+            outline: none; box-sizing: border-box; line-height: 1.4;
+        }
+        
+        .editor-bottom { display: flex; justify-content: space-between; align-items: center; margin-top: 15px; }
+        .save-status { font-size: 0.85rem; color: var(--muted); font-weight: 500; }
+        
+        button.seal-btn {
+            background: var(--accent);
+            color: #ffffff;
+            font-family: 'Outfit', sans-serif;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+            border: none; 
+            padding: 10px 28px; 
+            border-radius: 12px;
+            font-weight: 700; 
+            font-size: 1rem;
+            cursor: pointer; 
+            transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+            box-shadow: 0 4px 15px var(--accent-glow);
+        }
+        button.seal-btn:hover { 
+            transform: scale(1.05) translateY(-1px); 
+            filter: brightness(1.1);
+            box-shadow: 0 8px 25px var(--accent-glow); 
+        }
+
+        .sealed-ui {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            height: 180px; text-align: center; color: var(--muted);
+        }
+        .sealed-icon-static { width: 32px; height: 32px; margin-bottom: 12px; color: var(--accent); opacity: 0.8; transition: color 0.3s; }
+        .sealed-title { font-weight: 700; color: white; margin-bottom: 4px; font-size: 1.1rem; }
+        .sealed-date { font-size: 0.9rem; margin-top: 5px; }
+        .sealed-time { font-size: 0.85rem; color: var(--accent); margin-top: 4px; font-family: monospace; letter-spacing: 1px; opacity: 0.9; transition: color 0.3s; }
+        
+        button.unseal-btn {
+            background: rgba(255,255,255,0.05); color: var(--text); border: 1px solid rgba(255,255,255,0.1);
+            padding: 8px 16px; border-radius: 8px; font-size: 0.85rem; cursor: pointer; transition: 0.2s; margin-top: 15px;
+        }
+        button.unseal-btn:hover { background: rgba(255,255,255,0.1); border-color: var(--accent); }
+
+        .anim-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--card); backdrop-filter: blur(15px);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            opacity: 0; pointer-events: none; transition: opacity 0.4s; z-index: 10;
+        }
+        .anim-overlay.active { opacity: 1; pointer-events: all; }
+        
+        .lock-container {
+            width: 60px; height: 60px; position: relative; margin-bottom: 15px;
+            transform: scale(0); transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .anim-overlay.active .lock-container { transform: scale(1.2); }
+        
+        .shackle {
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.3s;
+            transform-origin: 17px 11px;
+            transform: translateY(-4px) rotate(-15deg); 
+        }
+        .anim-overlay.active .shackle { transform: translateY(0) rotate(0); }
+
+        .anim-text {
+            color: white; font-weight: 700; font-size: 1.2rem;
+            transform: translateY(10px); opacity: 0; transition: all 0.5s ease 0.4s;
+        }
+        .anim-overlay.active .anim-text { transform: translateY(0); opacity: 1; }
+
+        .timeline-view { text-align: left; width: 100%; margin-top: 20px; }
+        .eoy-options { display: flex; flex-direction: column; gap: 12px; margin: 24px 0; }
+        .secondary-btn {
+            width: 100%; background: var(--card); color: var(--text);
+            border: 1px solid rgba(255,255,255,0.1); padding: 16px;
+            border-radius: 14px; font-weight: 600; font-size: 1rem;
+            cursor: pointer; transition: all 0.2s; font-family: inherit;
+        }
+        .secondary-btn:hover { border-color: var(--accent); transform: translateY(-2px); }
+        .reader-card {
+            background: var(--card); border-radius: 20px; padding: 22px;
+            border: 1px solid rgba(255,255,255,0.1); text-align: left; margin-top: 20px;
+        }
+        .reader-date { color: var(--accent); font-weight: 700; margin-bottom: 10px; }
+        .reader-entry { line-height: 1.6; font-size: 1.1rem; white-space: pre-wrap; }
+        .reader-controls { display: flex; gap: 10px; margin-top: 18px; }
+        .reader-controls button { flex: 1; }
+        .reader-count { color: var(--muted); font-size: 0.85rem; text-align: center; margin-top: 12px; }
+        
+        .final-prompt {
+            display: none; background: linear-gradient(135deg, var(--card), rgba(99,102,241,0.16));
+            border: 1px solid rgba(255,255,255,0.14); border-radius: 20px;
+            padding: 18px; margin-bottom: 20px; text-align: left;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.22);
+        }
+        .final-prompt.active { display: block; }
+        .final-prompt-title { color: white; font-weight: 800; font-size: 1.15rem; margin-bottom: 4px; }
+        .final-prompt-copy { color: var(--muted); line-height: 1.5; margin: 0 0 14px 0; }
+        
+        /* WARP TUNNEL EFFECTS */
+        .warp-overlay {
+            position: fixed; inset: 0; background: #000;
+            display: flex; align-items: center; justify-content: center; opacity: 0;
+            pointer-events: none; z-index: 99; transition: opacity 0.5s ease; overflow: hidden;
+            perspective: 800px;
+        }
+        .warp-overlay.active { opacity: 1; pointer-events: all; }
+        
+        .warp-core {
+            position: absolute;
+            width: 10px; height: 10px; border-radius: 50%;
+            background: var(--accent); 
+            box-shadow: 0 0 80px 60px var(--accent);
+            animation: warpCoreExpand 3.5s cubic-bezier(0.8, 0, 0.2, 1) forwards;
+        }
+
+        button { font-family: 'Outfit', sans-serif !important; }
+
+        @keyframes gridCascade {
+            from { opacity: 0; transform: scale(0.3); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .cascade-block {
+            animation: gridCascade 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) backwards;
+        }
+
+        .flying-entry {
+            position: absolute; color: var(--text); font-weight: 700; font-size: 1.2rem;
+            white-space: nowrap; opacity: 0; pointer-events: none;
+            text-shadow: 0 0 15px var(--accent-glow);
+            animation: flyPast 1.2s cubic-bezier(0.5, 0, 0.5, 1) forwards;
+            transform: translate(-50%, -50%) scale(0.1);
+        }
+
+        .flash-bang {
+            position: absolute; inset: 0; background: #fff; opacity: 0;
+            pointer-events: none; transition: opacity 0.2s;
+        }
+        .flash-bang.active { opacity: 1; transition: opacity 0.1s; }
+
+        .archive-list { display: flex; flex-direction: column; gap: 12px; margin: 24px 0; }
+        .memory-card { 
+            background: var(--card); padding: 20px; border-radius: 16px; margin-bottom: 12px; 
+            border-left: 4px solid var(--accent); animation: slideIn 0.5s ease-out forwards; opacity: 0; 
+        }
+        .dev-gear { 
+            position: fixed; bottom: 15px; right: 15px; width: 30px; height: 30px; 
+            opacity: 0.1; cursor: pointer; transition: 0.3s; color: white; 
+            display: flex; align-items: center; justify-content: center; font-size: 1.2rem; z-index: 100;
+        }
+        .dev-gear:hover { opacity: 1; }
+
+        @keyframes slideIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        @keyframes warpCoreExpand {
+            0% { transform: scale(0.1); opacity: 0; }
+            50% { transform: scale(1); opacity: 1; }
+            90% { transform: scale(50); opacity: 1; }
+            100% { transform: scale(100); opacity: 0; }
+        }
+
+        @keyframes flyPast {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.1); filter: blur(4px); }
+            30% { opacity: 1; filter: blur(0px); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(5); filter: blur(12px); }
+        }
+
+        @keyframes popInFill {
+            0% { transform: scale(1); background: #1e293b; box-shadow: none; }
+            50% { transform: scale(1.2); background: var(--accent); box-shadow: 0 0 10px var(--accent-glow); }
+            100% { transform: scale(1); background: var(--accent); box-shadow: 0 0 6px var(--accent-glow); }
+        }
+
+        .day-block.anim-fill {
+            animation: popInFill 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        /* Home Menu Bar */
+        .home-menu-bar {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 10px;
+            margin-bottom: 20px;
+            width: 100%;
+        }
+        .menu-btn {
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--muted);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 12px 18px;
+            border-radius: 12px;
+            font-family: inherit;
+            font-weight: 500;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+            justify-content: center;
+        }
+        .menu-btn:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text);
+            border-color: var(--accent);
+        }
+
+        .secondary-btn-link {
+            display: block;
+            width: 100%;
+            background: var(--card);
+            color: var(--text);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 16px;
+            border-radius: 14px;
+            font-weight: 600;
+            font-size: 1rem;
+            text-align: center;
+            text-decoration: none;
+            box-sizing: border-box; 
+            transition: all 0.2s;
+            margin-top: 12px;
+        }
+
+        .secondary-btn-link:hover {
+            border-color: var(--accent);
+            transform: translateY(-2px);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        /* Reader Slide Animations */
+        @keyframes slideInRight {
+            from { opacity: 0; transform: translateX(30px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes slideInLeft {
+            from { opacity: 0; transform: translateX(-30px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .slide-in-right { animation: slideInRight 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+        .slide-in-left { animation: slideInLeft 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+
+        .fade-content { animation: fadeIn 0.3s ease-out; }
+    </style>
+</head>
+<body>
+    <div id="screen-onboard" class="screen">
+        <div class="top-bar" style="justify-content: flex-end; margin-bottom: 0;">
+            <button class="menu-btn" style="flex: 0 0 auto; padding: 8px 12px;" onclick="shareApp()" title="Share App">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+            </button>
+        </div>
+        <div style="margin: 20px 0;">
+    <img src="logo.png" alt="MemStore Logo" style="width: 80px; height: 80px; border-radius: 18px; box-shadow: 0 0 20px var(--accent-glow);">
+    <h1 style="margin-top: 10px;">MemStore</h1>
+</div>
+        <p class="subtitle">A 365-day time capsule.<br>Rule #1: Write at least <b>one good thing</b> that happened today.<br>Rule #2: You can't read past entries until the year is up.</p>
+        
+        <div style="background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 12px; padding: 14px; margin-bottom: 24px;">
+            <p style="margin: 0; font-size: 0.9rem; color: #a5b4fc;">🛡️ <b>Privacy First:</b> Your memories never leave your device. We have no servers, no tracking, and no way to read your vault.</p>
+        </div>
+
+        <div id="activeVaultTracker" style="display: none; background: var(--card); padding: 22px; border-radius: 16px; margin-bottom: 24px; border: 1px solid rgba(255,255,255,0.1);">
+            <h3 style="margin: 0 0 15px 0; font-size: 1.2rem; color: var(--accent);">Current Time Capsule</h3>
+            <div class="progress-container" style="margin-bottom: 8px;"><div class="progress-bar" id="homeProgressBar"></div></div>
+            <div class="progress-text" id="homeProgressText" style="text-align: center; margin-bottom: 18px;">Day X of 365</div>
+            <button class="primary-btn" onclick="openActiveVault()">Enter Vault</button>
+        </div>
+
+        <button id="btnBeginExperiment" class="primary-btn" onclick="nav('screen-setup')">Begin the Experiment</button>
+        
+        <div id="previousYearsHome" style="display: none; margin-top: 14px;">
+            <button class="secondary-btn" onclick="showArchiveHome()">View Previous Years</button>
+        </div>
+
+        <a href="https://jenishestmoizavut.github.io/jenish.one" target="_blank" class="secondary-btn-link">
+            Visit the Developer's Hub
+        </a>
+    </div>
+
+    <div id="screen-setup" class="screen">
+        <h1>When does year zero start?</h1>
+        <p class="subtitle">Choose your timeline.</p>
+        <div class="radio-group">
+            <label class="radio-label"><input type="radio" name="startOption" value="today" checked onclick="toggleCustomDate(false)"> Start Today</label>
+            <label class="radio-label"><input type="radio" name="startOption" value="newyear" onclick="toggleCustomDate(false)"> Start from New Year (Jan 1, 2026)</label>
+            <label class="radio-label" style="flex-wrap: wrap;"><input type="radio" name="startOption" value="custom" onclick="toggleCustomDate(true)"> Custom / Birthday <input type="date" id="customDateInput"></label>
+        </div>
+<div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 12px; padding: 14px; margin-bottom: 24px; text-align: left;">
+    <p style="margin: 0; font-size: 0.85rem; color: #fca5a5; line-height: 1.4;">
+        ⚠️ <b>Important:</b> Your memories are stored directly in this browser's <b>IndexedDB</b>. Clearing your browser data, "Resetting" the app, or deleting the site's storage will wipe your vault forever. <b>Do not do it!</b>
+    </p>
+</div>
+        <button class="primary-btn" onclick="initializeVault()">Lock It In</button>
+    </div>
+
+    <div id="screen-main" class="screen">
+        <div class="top-bar">
+            <h2 style="margin:0; font-size:1.5rem;">The Vault</h2>
+            <div class="theme-picker" title="Pick a color theme">
+                <input type="color" id="colorPicker" value="#6366f1" oninput="applyCustomColor(this.value)">
+            </div>
+        </div>
+
+        <div class="progress-container"><div class="progress-bar" id="progressBar"></div></div>
+        <div class="progress-text" id="progressText">Day 0 of 365</div>
+
+        <div class="grid-wrapper">
+            <div class="calendar-grid" id="calendarGrid"></div>
+            <p style="font-size: 0.75rem; color: var(--muted); margin-top: 15px;">Click hollow boxes to backdate. Seal them when ready.</p>
+        </div>
+
+        <div class="input-wrap">
+            <div id="animOverlay" class="anim-overlay">
+                <div class="lock-container">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent); filter: drop-shadow(0 0 10px var(--accent-glow));">
+                        <path class="shackle" d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                    </svg>
+                </div>
+                <div class="anim-text">Sealed. See you next year.</div>
+            </div>
+
+            <div id="editorState">
+                <span class="active-date-label" id="activeDateLabel">Today's Entry</span>
+                <textarea id="entryText" placeholder="What is one good thing that happened?..." oninput="autoSaveDraft()"></textarea>
+                <div class="editor-bottom">
+                    <div class="save-status" id="saveStatus">Draft</div>
+                    <button class="seal-btn" onclick="sealEntry()">Seal</button>
+                </div>
+            </div>
+
+            <div id="sealedState" class="sealed-ui" style="display: none;">
+                <svg class="sealed-icon-static" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                <div class="sealed-title">Sealed</div>
+                <div class="sealed-date" id="sealedDateLabel">Memory as of Apr 26, 2026</div>
+                <div class="sealed-time" id="sealedTimeLabel">20:27:34</div>
+                <div id="unsealContainer" style="display: none;"><button class="unseal-btn" onclick="unsealToday()">Edit before the day ends!</button></div>
+            </div>
+        </div>
+
+        <div id="finalPrompt" class="final-prompt">
+            <div class="final-prompt-title">The final seal is ready.</div>
+            <p class="final-prompt-copy">Your last entry is locked. Step through when you are ready to open the year.</p>
+            <button class="primary-btn" onclick="enterTimeCapsule()">Enter the Time Machine</button>
+        </div>
+
+        <div class="home-menu-bar">
+            <button class="menu-btn" onclick="openEditor(getDateKey())" title="Return to today's entry">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                Today
+            </button>
+            <button class="menu-btn" id="btnArchivesMenu" style="display: none;" onclick="showArchiveHome()" title="View previous capsules">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8v13H3V8M1 3h22v5H1zM10 12h4"></path></svg>
+                Archives
+            </button>
+        </div>
+    </div>
+
+    <div id="screen-unlocked" class="screen">
+        <div id="arrivalPhase">
+            <h1>Timeline Reconstructed.</h1>
+            <p class="subtitle">Compiling your recorded memories...</p>
+            
+            <div class="grid-wrapper" style="margin-bottom: 30px;">
+                <div class="calendar-grid" id="arrivalGrid"></div>
+            </div>
+
+            <button id="stepOutBtn" class="primary-btn" style="display: none; padding: 18px; font-size: 1rem; line-height: 1.4;" onclick="showReaderOptions()">
+                You have reached your destination, step out and relive your best memories - click here
+            </button>
+        </div>
+
+        <div id="readerPhase" style="display: none;">
+            <h1>Year Complete.</h1>
+            <p class="subtitle">Your 365 days of light are revealed.</p>
+            <div class="eoy-options">
+                <button class="primary-btn" onclick="startDayByDay()">Read Day by Day</button>
+                <button class="secondary-btn" onclick="revealRandom()">Pick One Randomly</button>
+            </div>
+            
+            <div id="reader" class="reader-card" style="display: none;">
+                <div style="display: flex; align-items: baseline; gap: 8px; margin-bottom: 10px;">
+                    <div class="reader-date" style="margin-bottom: 0;" id="readerDate"></div>
+                    <div id="readerTime" style="color: var(--muted); font-size: 0.85rem; font-family: monospace;"></div>
+                </div>
+                
+                <img id="readerImage" class="reader-image" style="display: none;" src="">
+                <div class="reader-entry" id="readerEntry"></div>
+
+                <div class="reader-controls">
+                    <button class="secondary-btn" id="btnReaderPrev" onclick="moveReader(-1)">Previous</button>
+                    <button class="secondary-btn" id="btnReaderRandom" onclick="revealRandom()" style="display: none;">Another Day</button>
+                    <button class="secondary-btn" onclick="shareMemory()">Share</button>
+                    <button class="secondary-btn" id="btnReaderNext" onclick="moveReader(1)">Next</button>
+                </div>
+                <div class="reader-count" id="readerCount"></div>
+            </div>
+            <div id="timeline" class="timeline-view"></div>
+        </div>
+    </div>
+
+    <div id="screen-archive" class="screen">
+        <h1>Previous Years</h1>
+        <p class="subtitle">Return to an older time capsule.</p>
+        <div id="archiveList" class="archive-list"></div>
+        <button class="secondary-btn" onclick="nav('screen-onboard')">Back</button>
+    </div>
+
+    <div class="dev-gear" title="Dev Switch: Force EOY Warp" onclick="devUnlock()">EOY</div>
+    
+    <div id="warpOverlay" class="warp-overlay">
+        <div class="warp-core" id="warpCore"></div>
+        <div class="flash-bang" id="flashBang"></div>
+    </div>
+
+    <script>
+        // --- INDEXEDDB STORAGE SYSTEM ---
+        const dbName = 'MemStoreDB';
+        const storeName = 'vaults';
+
+        function initDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(dbName, 1);
+                request.onupgradeneeded = (e) => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains(storeName)) {
+                        db.createObjectStore(storeName);
+                    }
+                };
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
+        }
+
+        async function saveToDB(key, data) {
+            const db = await initDB();
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(storeName, 'readwrite');
+                tx.objectStore(storeName).put(data, key);
+                tx.oncomplete = () => resolve();
+                tx.onerror = () => reject();
+            });
+        }
+
+        async function loadFromDB(key) {
+            const db = await initDB();
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(storeName, 'readonly');
+                const request = tx.objectStore(storeName).get(key);
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject();
+            });
+        }
+
+        // --- APP STATE ---
+        let memData = null;
+        let archives = [];
+        let activeCapsule = null;
+        let activeEditDate = null;
+        let readerDates = [];
+        let readerIndex = 0;
+        let saveTimeout;
+        let audioCtx;
+
+        let savedColor = localStorage.getItem('memCustomColor') || '#6366f1';
+        document.getElementById('colorPicker').value = savedColor;
+        applyCustomColor(savedColor);
+
+        // Run the async boot sequence
+        bootApp();
+
+        async function bootApp() {
+            memData = await loadFromDB('activeVault');
+            archives = await loadFromDB('archives') || [];
+
+            if (!memData) {
+                const oldV5 = localStorage.getItem('memStoreV5') || localStorage.getItem('memStoreV6');
+                if (oldV5) {
+                    memData = JSON.parse(oldV5);
+                    await saveToDB('activeVault', memData);
+                }
+            }
+            if (archives.length === 0) {
+                const oldArchives = localStorage.getItem('memStoreArchives');
+                if (oldArchives) {
+                    archives = JSON.parse(oldArchives);
+                    await saveToDB('archives', archives);
+                }
+            }
+
+            activeCapsule = memData;
+            refreshPreviousYearsButton();
+            checkAppState(); 
+        }
+
+        function checkAppState() {
+            nav('screen-onboard'); 
+            
+            const tracker = document.getElementById('activeVaultTracker');
+            const beginBtn = document.getElementById('btnBeginExperiment');
+
+            if (memData) {
+                if (!memData.drafts) memData.drafts = {};
+                if (!memData.timestamps) memData.timestamps = {};
+                
+                tracker.style.display = 'block';
+                beginBtn.textContent = 'Start New Vault (Deletes Current)';
+                beginBtn.className = 'secondary-btn'; 
+                beginBtn.style.marginTop = '12px';
+
+                const start = new Date(`${memData.startDate}T00:00:00`);
+                const now = new Date(`${getDateKey()}T00:00:00`);
+                const diffTime = now - start;
+                const daysPassed = Math.max(0, Math.floor(diffTime / (1000 * 60 * 60 * 24))) + 1;
+                const progress = Math.min((daysPassed / 365) * 100, 100);
+
+                document.getElementById('homeProgressBar').style.width = `${progress}%`;
+                document.getElementById('homeProgressText').innerText = `Day ${Math.min(daysPassed, 365)} of 365`;
+            } else {
+                tracker.style.display = 'none';
+                beginBtn.textContent = 'Begin the Experiment';
+                beginBtn.className = 'primary-btn';
+                beginBtn.style.marginTop = '0';
+            }
+        }
+
+        function openActiveVault() {
+            nav('screen-main');
+            renderApp();
+        }
+
+        function initializeVault() {
+            if (memData) {
+                if(!confirm("WARNING: Starting a new timeline will permanently overwrite your active vault! Are you absolutely sure?")) return;
+            }
+            
+            const option = document.querySelector('input[name="startOption"]:checked').value;
+            let startDateStr = getDateKey();
+            if (option === 'newyear') startDateStr = `${new Date().getFullYear()}-01-01`;
+            else if (option === 'custom') {
+                const custom = document.getElementById('customDateInput').value;
+                if (!custom) return alert("Please select a date.");
+                startDateStr = custom;
+            }
+            memData = { startDate: startDateStr, entries: {}, drafts: {}, timestamps: {} };
+            
+            saveToDB('activeVault', memData); 
+            openActiveVault(); 
+        }
+
+        function playSealSound() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.05);
+        }
+
+        function playWarpSound() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc1 = audioCtx.createOscillator();
+            const osc2 = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+
+            osc1.type = 'sine';
+            osc2.type = 'sine';
+            osc1.frequency.setValueAtTime(300, audioCtx.currentTime);
+            osc1.frequency.linearRampToValueAtTime(800, audioCtx.currentTime + 3.5);
+            osc2.frequency.setValueAtTime(305, audioCtx.currentTime);
+            osc2.frequency.linearRampToValueAtTime(810, audioCtx.currentTime + 3.5);
+
+            gain.gain.setValueAtTime(0, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.3, audioCtx.currentTime + 1);
+            gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 3.5);
+
+            osc1.connect(gain);
+            osc2.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            osc1.start(); osc2.start();
+            osc1.stop(audioCtx.currentTime + 3.5); osc2.stop(audioCtx.currentTime + 3.5);
+        }
+
+        function applyCustomColor(hex) {
+            const root = document.documentElement;
+            root.style.setProperty('--accent', hex);
+            let r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
+            root.style.setProperty('--accent-glow', `rgba(${r}, ${g}, ${b}, 0.4)`);
+            localStorage.setItem('memCustomColor', hex);
+        }
+
+        function nav(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        function toggleCustomDate(show) { document.getElementById('customDateInput').style.display = show ? 'block' : 'none'; }
+
+        function getDateKey(date = new Date()) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        function addDays(dateStr, days) {
+            const date = new Date(`${dateStr}T00:00:00`);
+            date.setDate(date.getDate() + days);
+            return getDateKey(date);
+        }
+
+        function getFinalDateStr() { return addDays(memData.startDate, 364); }
+
+        function canEnterTimeCapsule() {
+            if (!memData) return false;
+            const finalDateStr = getFinalDateStr();
+            const threshold = new Date(`${finalDateStr}T06:00:00`);
+            return new Date() >= threshold && !!memData.entries[finalDateStr];
+        }
+
+        function updateFinalPrompt() {
+            const prompt = document.getElementById('finalPrompt');
+            if (!prompt) return;
+            prompt.classList.toggle('active', canEnterTimeCapsule());
+        }
+
+        function refreshPreviousYearsButton() { 
+            const prevYearsOnboard = document.getElementById('previousYearsHome');
+            if (prevYearsOnboard) prevYearsOnboard.style.display = archives.length ? 'block' : 'none'; 
+            
+            const btnArchivesMenu = document.getElementById('btnArchivesMenu');
+            if (btnArchivesMenu) btnArchivesMenu.style.display = archives.length ? 'flex' : 'none';
+        }
+
+        function getCapsuleLabel(capsule) {
+            const startYear = new Date(`${capsule.startDate}T00:00:00`).getFullYear();
+            const finalYear = new Date(`${addDays(capsule.startDate, 364)}T00:00:00`).getFullYear();
+            return startYear === finalYear ? `${startYear}` : `${startYear}-${finalYear}`;
+        }
+
+        function archiveCurrentVault() {
+            const snapshot = { ...memData, completedAt: new Date().toISOString(), label: getCapsuleLabel(memData) };
+            archives = archives.filter(capsule => capsule.startDate !== snapshot.startDate);
+            archives.unshift(snapshot);
+            saveToDB('archives', archives); 
+            refreshPreviousYearsButton();
+            return snapshot;
+        }
+
+        function renderApp() {
+            const todayStr = getDateKey();
+            const finalDateStr = getFinalDateStr();
+            const start = new Date(`${memData.startDate}T00:00:00`);
+            const now = new Date(`${todayStr}T00:00:00`);
+            const diffTime = now - start;
+            const daysPassed = Math.max(0, Math.floor(diffTime / (1000 * 60 * 60 * 24))) + 1; 
+            const progress = Math.min((daysPassed / 365) * 100, 100);
+            document.getElementById('progressBar').style.width = `${progress}%`;
+            document.getElementById('progressText').innerText = `Day ${Math.min(daysPassed, 365)} of 365`;
+            const grid = document.getElementById('calendarGrid');
+            grid.innerHTML = '';
+            let gridStart = new Date(`${memData.startDate}T00:00:00`);
+            for (let i = 0; i < 365; i++) {
+                const currentBlockDate = new Date(gridStart);
+                currentBlockDate.setDate(gridStart.getDate() + i);
+                const blockDateStr = getDateKey(currentBlockDate);
+                const block = document.createElement('div');
+                block.className = 'day-block';
+                if (blockDateStr > todayStr) block.classList.add('locked');
+                else if (memData.entries[blockDateStr]) { block.classList.add('filled'); block.onclick = () => openEditor(blockDateStr); }
+                else if (blockDateStr === todayStr) { block.classList.add('today'); block.onclick = () => openEditor(blockDateStr); }
+                else { block.classList.add('missed'); block.onclick = () => openEditor(blockDateStr); }
+                grid.appendChild(block);
+            }
+            openEditor(daysPassed > 365 ? finalDateStr : todayStr);
+            updateFinalPrompt();
+        }
+
+        function openEditor(dateStr) {
+            activeEditDate = dateStr;
+            const todayStr = getDateKey();
+            const isToday = dateStr === todayStr;
+            const isSealed = !!memData.entries[dateStr];
+            const editorState = document.getElementById('editorState');
+            const sealedState = document.getElementById('sealedState');
+            const unsealContainer = document.getElementById('unsealContainer');
+            if (isSealed) {
+                editorState.style.display = 'none';
+                sealedState.style.display = 'flex';
+                const options = { month: 'short', day: 'numeric', year: 'numeric' };
+                document.getElementById('sealedDateLabel').innerText = `Memory as of ${new Date(dateStr).toLocaleDateString('en-US', options)}`;
+                document.getElementById('sealedTimeLabel').innerText = memData.timestamps[dateStr] || "--:--:--";
+                unsealContainer.style.display = isToday ? 'block' : 'none';
+            } else {
+                editorState.style.display = 'block';
+                sealedState.style.display = 'none';
+                document.getElementById('activeDateLabel').innerText = isToday ? "Today's Entry" : `Backdating: ${dateStr}`;
+                document.getElementById('entryText').value = memData.drafts[dateStr] || '';
+                const lastEditTime = memData.timestamps[dateStr];
+                document.getElementById('saveStatus').innerText = memData.drafts[dateStr] && lastEditTime ? `Draft saved at ${lastEditTime}` : '';
+            }
+        }
+
+        function autoSaveDraft() {
+            if (!activeEditDate) return;
+            const content = document.getElementById('entryText').value.trim();
+            const status = document.getElementById('saveStatus');
+            status.innerText = 'Saving...';
+            clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(() => {
+                const timeStr = new Date().toLocaleTimeString('en-US', { hour12: false });
+                if (content) { memData.drafts[activeEditDate] = content; memData.timestamps[activeEditDate] = timeStr; }
+                else { delete memData.drafts[activeEditDate]; delete memData.timestamps[activeEditDate]; }
+                saveToDB('activeVault', memData); 
+                status.innerText = `Draft saved at ${timeStr}`;
+            }, 500);
+        }
+
+        function sealEntry() {
+            const content = document.getElementById('entryText').value.trim();
+            if (!content) return alert("Write at least one good thing before sealing!");
+            
+            const timeStr = new Date().toLocaleTimeString('en-US', { hour12: false });
+            memData.timestamps[activeEditDate] = timeStr;
+            memData.entries[activeEditDate] = content;
+            delete memData.drafts[activeEditDate];
+            
+            saveToDB('activeVault', memData); 
+
+            playSealSound();
+            const overlay = document.getElementById('animOverlay');
+            overlay.classList.add('active');
+            
+            updateGridVisuals();
+            updateFinalPrompt();
+            setTimeout(() => {
+                overlay.classList.remove('active');
+                openEditor(activeEditDate);
+            }, 2600); 
+        }
+        
+        function unsealToday() {
+            if (memData.entries[activeEditDate]) {
+                memData.drafts[activeEditDate] = memData.entries[activeEditDate];
+                delete memData.entries[activeEditDate];
+                saveToDB('activeVault', memData); 
+                updateGridVisuals();
+                openEditor(activeEditDate);
+                updateFinalPrompt();
+            }
+        }
+
+        function updateGridVisuals() {
+            const todayStr = getDateKey();
+            const blocks = document.getElementById('calendarGrid').children;
+            let gridStart = new Date(`${memData.startDate}T00:00:00`);
+            for (let i = 0; i < 365; i++) {
+                const currentBlockDate = new Date(gridStart);
+                currentBlockDate.setDate(gridStart.getDate() + i);
+                const dateStr = getDateKey(currentBlockDate);
+                blocks[i].className = 'day-block'; 
+                if (dateStr > todayStr) blocks[i].classList.add('locked');
+                else if (memData.entries[dateStr]) blocks[i].classList.add('filled');
+                else if (dateStr === todayStr) blocks[i].classList.add('today');
+                else blocks[i].classList.add('missed');
+            }
+        }
+
+        function devUnlock() {
+            if (!memData) {
+                if (archives.length) { triggerWarpSequence(archives[0]); return; }
+                alert("Start a vault and write an entry first!"); return;
+            }
+            triggerWarpSequence(memData);
+        }
+
+        function enterTimeCapsule() {
+            if (!canEnterTimeCapsule()) return;
+            const snapshot = archiveCurrentVault();
+            memData = null;
+            saveToDB('activeVault', null); 
+            triggerWarpSequence(snapshot);
+        }
+
+        function triggerWarpSequence(capsule) {
+            activeCapsule = capsule;
+            const overlay = document.getElementById('warpOverlay');
+            const flash = document.getElementById('flashBang');
+            
+            overlay.classList.add('active');
+            playWarpSound();
+
+            const core = document.getElementById('warpCore');
+            core.style.animation = 'none';
+            core.offsetHeight; 
+            core.style.animation = 'warpCoreExpand 3.4s cubic-bezier(0.8, 0, 0.2, 1) forwards';
+
+            const entries = Object.values(capsule.entries);
+            if (entries.length === 0) entries.push("You were quiet this day.", "Time keeps moving.", "A memory unwritten.");
+
+            let spawnCount = 0;
+            const spawnInterval = setInterval(() => {
+                if (spawnCount > 30) { clearInterval(spawnInterval); return; }
+
+                const el = document.createElement('div');
+                el.className = 'flying-entry';
+                
+                let text = entries[Math.floor(Math.random() * entries.length)];
+                if(text.length > 30) text = text.substring(0, 30) + '...';
+                el.innerText = text;
+
+                const isLeft = Math.random() > 0.5;
+                el.style.left = isLeft ? `${Math.random() * 25}%` : `${75 + Math.random() * 25}%`;
+                el.style.top = `${10 + Math.random() * 80}%`;
+
+                overlay.appendChild(el);
+                setTimeout(() => el.remove(), 1200); 
+                spawnCount++;
+            }, 90);
+
+            setTimeout(() => {
+                flash.classList.add('active');
+                setTimeout(() => {
+                    overlay.classList.remove('active');
+                    showEOY(capsule);
+                    setTimeout(() => flash.classList.remove('active'), 200);
+                }, 150);
+            }, 3300);
+        }
+
+        function showEOY(capsule) {
+            nav('screen-unlocked');
+            readerDates = Object.keys(capsule.entries).sort();
+            readerIndex = 0;
+            
+            document.getElementById('arrivalPhase').style.display = 'block';
+            document.getElementById('readerPhase').style.display = 'none';
+            document.getElementById('stepOutBtn').style.display = 'none';
+            document.getElementById('reader').style.display = 'none';
+            document.getElementById('timeline').innerHTML = '';
+
+            const grid = document.getElementById('arrivalGrid');
+            grid.innerHTML = '';
+            
+            let gridStart = new Date(`${capsule.startDate}T00:00:00`);
+            const blocks = [];
+            const entryIndices = [];
+
+            for (let i = 0; i < 365; i++) {
+                const currentBlockDate = new Date(gridStart);
+                currentBlockDate.setDate(gridStart.getDate() + i);
+                const dateStr = getDateKey(currentBlockDate);
+                
+                const block = document.createElement('div');
+                block.className = 'day-block missed cascade-block'; 
+                block.style.animationDelay = `${i * 2}ms`; 
+                
+                grid.appendChild(block);
+                blocks.push(block);
+
+                if (capsule.entries[dateStr]) {
+                    entryIndices.push(i);
+                }
+            }
+
+            if (entryIndices.length > 0) {
+                let delay = 0;
+                const stagger = Math.min(2000 / entryIndices.length, 80); 
+                
+                entryIndices.forEach((index) => {
+                    setTimeout(() => {
+                        blocks[index].classList.remove('missed');
+                        blocks[index].classList.add('anim-fill');
+                        setTimeout(() => blocks[index].classList.add('filled'), 400); 
+                    }, delay);
+                    delay += stagger;
+                });
+
+                setTimeout(() => {
+                    const btn = document.getElementById('stepOutBtn');
+                    btn.style.display = 'block';
+                    btn.style.animation = 'fadeIn 0.6s ease-out';
+                    btn.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }, delay + 600);
+                
+            } else {
+                document.getElementById('stepOutBtn').style.display = 'block';
+            }
+        }
+
+        function showReaderOptions() {
+            document.getElementById('arrivalPhase').style.display = 'none';
+            document.getElementById('readerPhase').style.display = 'block';
+            document.getElementById('readerPhase').style.animation = 'fadeIn 0.4s ease-out';
+        }
+
+        function startDayByDay() {
+            if (readerDates.length === 0) return alert("You need to seal at least one memory first!");
+            readerIndex = 0;
+            document.getElementById('btnReaderRandom').style.display = 'none';
+            document.getElementById('timeline').innerHTML = '';
+            document.getElementById('reader').style.display = 'block';
+            renderReader();
+        }
+
+        function moveReader(n) {
+            if (readerDates.length === 0) return;
+            readerIndex = (readerIndex + n + readerDates.length) % readerDates.length;
+            const dir = n > 0 ? 'next' : 'prev';
+            renderReader(dir);
+        }
+
+        function revealRandom() {
+            readerIndex = Math.floor(Math.random() * readerDates.length);
+            document.getElementById('btnReaderRandom').style.display = 'block';
+            document.getElementById('reader').style.display = 'block';
+            renderReader('none');
+        }
+
+        function renderReader(direction = 'none') {
+            const readerCard = document.getElementById('reader');
+            const d = readerDates[readerIndex];
+            
+            readerCard.classList.remove('slide-in-right', 'slide-in-left', 'fade-content');
+            void readerCard.offsetWidth;
+
+            if (direction === 'next') readerCard.classList.add('slide-in-right');
+            else if (direction === 'prev') readerCard.classList.add('slide-in-left');
+            else readerCard.classList.add('fade-content');
+
+            document.getElementById('readerDate').innerText = new Date(d).toLocaleDateString('en-US', { 
+                month: 'short', day: 'numeric', year: 'numeric' 
+            });
+            document.getElementById('readerTime').innerText = activeCapsule.timestamps[d] ? `• Sealed at ${activeCapsule.timestamps[d]}` : '';
+            document.getElementById('readerEntry').innerText = activeCapsule.entries[d];
+            document.getElementById('readerCount').innerText = `${readerIndex + 1} of ${readerDates.length}`;
+        }
+
+        async function showArchiveHome() {
+            const list = document.getElementById('archiveList');
+            list.innerHTML = '';
+            
+            archives = await loadFromDB('archives') || [];
+
+            if (archives.length === 0) {
+                const emptyMsg = document.createElement('div');
+                emptyMsg.style.padding = '30px 20px';
+                emptyMsg.style.background = 'var(--card)';
+                emptyMsg.style.borderRadius = '16px';
+                emptyMsg.style.border = '1px dashed rgba(255,255,255,0.1)';
+                emptyMsg.style.color = 'var(--muted)';
+                emptyMsg.style.lineHeight = '1.6';
+                emptyMsg.innerHTML = `
+                    <p style="margin:0;">The capsule has detected an authorised controller.</p>
+                    <p style="margin:10px 0 0 0; color:var(--text); font-weight:500;">
+                        Keep writing your memories atleast once a day chap, we shall meet at the end of the year.
+                    </p>`;
+                list.appendChild(emptyMsg);
+            } else {
+                archives.forEach((capsule, index) => {
+                    const button = document.createElement('button');
+                    button.className = index === 0 ? 'primary-btn' : 'secondary-btn';
+                    button.style.marginBottom = '12px';
+                    button.textContent = `${capsule.label || getCapsuleLabel(capsule)} Time Capsule`;
+                    button.onclick = () => triggerWarpSequence(capsule);
+                    list.appendChild(button);
+                });
+            }
+            nav('screen-archive');
+        }
+
+        function shareApp() {
+            const shareData = {
+                title: 'MemStore',
+                text: 'I am tracking my year in a 365-day time capsule. Build your own vault with MemStore!',
+                url: window.location.href 
+            };
+            
+            if (navigator.share) {
+                navigator.share(shareData).catch(err => console.log('Share canceled', err));
+            } else {
+                navigator.clipboard.writeText(window.location.href);
+                alert("App link copied to clipboard!");
+            }
+        }
+
+        function shareMemory() {
+            const date = document.getElementById('readerDate').innerText;
+            const entry = document.getElementById('readerEntry').innerText;
+            const shareText = `A memory from ${date}:\n\n"${entry}"\n\n— Logged via MemStore`;
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: 'MemStore Memory',
+                    text: shareText
+                }).catch(err => console.log('Share canceled', err));
+            } else {
+                navigator.clipboard.writeText(shareText);
+                alert("Memory copied to clipboard!");
+            }
+        }
+
+        // --- PREMIUM UI SOUND SYSTEM ---
+        function playUISound(type) {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const now = audioCtx.currentTime;
+            
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine'; 
+
+            if (type === 'tick') {
+                osc.frequency.setValueAtTime(350, now);
+                osc.frequency.exponentialRampToValueAtTime(250, now + 0.03);
+                gain.gain.setValueAtTime(0.04, now); 
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.03);
+                osc.start(now); osc.stop(now + 0.03);
+            } 
+            else if (type === 'pop') {
+                osc.frequency.setValueAtTime(450, now);
+                osc.frequency.exponentialRampToValueAtTime(300, now + 0.06);
+                gain.gain.setValueAtTime(0.08, now); 
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+                osc.start(now); osc.stop(now + 0.06);
+            }
+            else if (type === 'swell') {
+                osc.frequency.setValueAtTime(300, now);
+                osc.frequency.exponentialRampToValueAtTime(500, now + 0.1);
+                gain.gain.setValueAtTime(0, now);
+                gain.gain.linearRampToValueAtTime(0.1, now + 0.05);
+                gain.gain.linearRampToValueAtTime(0, now + 0.1);
+                osc.start(now); osc.stop(now + 0.1);
+            }
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+        }
+
+        document.addEventListener('click', (e) => {
+            const isGridBox = e.target.closest('.day-block') || e.target.closest('.theme-picker');
+            const isPrimaryBtn = e.target.closest('.primary-btn');
+            const isStandardBtn = e.target.closest('button') && !isPrimaryBtn;
+
+            if (isGridBox) {
+                playUISound('tick');
+            } else if (isPrimaryBtn) {
+                playUISound('swell');
+            } else if (isStandardBtn) {
+                playUISound('pop');
+            }
+        });
+// Register the Service Worker for PWA
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js')
+            .then(reg => console.log('Service Worker registered', reg))
+            .catch(err => console.log('Service Worker registration failed', err));
+    });
+}
+    </script>
+<footer style="margin-top: auto; padding: 40px 0 20px 0; text-align: center; opacity: 0.4; font-size: 0.8rem; letter-spacing: 0.5px;">
+    <p style="margin: 0;">© 2026 Jenish</p>
+    <p style="margin: 5px 0 0 0;">Created by Jenish with Gemini & ChatGPT</p>
+</footer>
+</body>
+</html>
