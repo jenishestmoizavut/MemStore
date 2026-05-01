@@ -9,9 +9,6 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" href="logo.png">
-<a href="https://hits.sh/jenishestmoizavut.github.io/MemStore/" style="display:none;">
-    <img alt="Hits" src="https://hits.sh/jenishestmoizavut.github.io/MemStore.svg?view=today-total"/>
-</a>
 
 <link rel="apple-touch-icon" href="logo.png">
     <title>MemStore | One Good Thing</title>
@@ -243,6 +240,7 @@
             text-shadow: 0 0 15px var(--accent-glow);
             animation: flyPast 1.2s cubic-bezier(0.5, 0, 0.5, 1) forwards;
             transform: translate(-50%, -50%) scale(0.1);
+will-change: transform, opacity;
         }
 
         .flash-bang {
@@ -274,9 +272,9 @@
         }
 
         @keyframes flyPast {
-            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.1); filter: blur(4px); }
+            0% { opacity: 0.5; transform: translate(-50%, -50%) scale(0.1); filter: blur(4px); }
             30% { opacity: 1; filter: blur(0px); }
-            100% { opacity: 0; transform: translate(-50%, -50%) scale(5); filter: blur(12px); }
+            100% { opacity: 0.1; transform: translate(-50%, -50%) scale(5); filter: blur(4px); }
         }
 
         @keyframes popInFill {
@@ -358,6 +356,44 @@
         .slide-in-left { animation: slideInLeft 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
 
         .fade-content { animation: fadeIn 0.3s ease-out; }
+/* Enhanced Warp Effects */
+.warp-message {
+    position: absolute;
+    bottom: 20%;
+    color: var(--accent);
+    font-weight: 300;
+    font-size: 0.9rem;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    opacity: 0;
+    transition: opacity 1s;
+}
+.warp-overlay.active .warp-message {
+    opacity: 1;
+}
+
+@keyframes corePulse {
+    0% { transform: scale(1); opacity: 0.5; }
+    50% { transform: scale(1.5); opacity: 1; }
+    100% { transform: scale(1); opacity: 0.5; }
+}
+
+.core-pulse {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid var(--accent);
+    animation: corePulse 1s infinite;
+}
+
+@keyframes warpCoreExpand {
+    0% { transform: scale(0.1); opacity: 0; }
+    20% { transform: scale(1); opacity: 1; }
+    80% { transform: scale(1.5); opacity: 1; } /* Slow expansion during deconstruction */
+    95% { transform: scale(100); opacity: 1; } /* Final snap */
+    100% { transform: scale(100); opacity: 0; }
+}
     </style>
 </head>
 <body>
@@ -551,11 +587,14 @@
         <p class="subtitle">Return to an older time capsule.</p>
         <div id="archiveList" class="archive-list"></div>
           </div>
- 
+
+    <div class="dev-gear" title="Dev Switch: Force EOY Warp" onclick="devUnlock()">EOY</div>
     <div id="warpOverlay" class="warp-overlay">
-        <div class="warp-core" id="warpCore"></div>
-        <div class="flash-bang" id="flashBang"></div>
-    </div>
+    <div class="core-pulse"></div>
+    <div class="warp-core" id="warpCore"></div>
+    <div id="warpMessage" class="warp-message">Initializing...</div>
+    <div class="flash-bang" id="flashBang"></div>
+</div>
 
     <script>
         // --- INDEXEDDB STORAGE SYSTEM ---
@@ -713,30 +752,37 @@
             osc.stop(audioCtx.currentTime + 0.05);
         }
 
-        function playWarpSound() {
-            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            const osc1 = audioCtx.createOscillator();
-            const osc2 = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
+function playWarpSound() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc1 = audioCtx.createOscillator();
+    const osc2 = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
 
-            osc1.type = 'sine';
-            osc2.type = 'sine';
-            osc1.frequency.setValueAtTime(300, audioCtx.currentTime);
-            osc1.frequency.linearRampToValueAtTime(800, audioCtx.currentTime + 3.5);
-            osc2.frequency.setValueAtTime(305, audioCtx.currentTime);
-            osc2.frequency.linearRampToValueAtTime(810, audioCtx.currentTime + 3.5);
+    const duration = 6.0; // Matches the new warp duration
 
-            gain.gain.setValueAtTime(0, audioCtx.currentTime);
-            gain.gain.linearRampToValueAtTime(0.3, audioCtx.currentTime + 1);
-            gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 3.5);
+    osc1.type = 'sine';
+    osc2.type = 'sine';
+    
+    // Ramp the frequency over the full 6 seconds
+    osc1.frequency.setValueAtTime(300, audioCtx.currentTime);
+    osc1.frequency.linearRampToValueAtTime(1000, audioCtx.currentTime + duration);
+    
+    osc2.frequency.setValueAtTime(305, audioCtx.currentTime);
+    osc2.frequency.linearRampToValueAtTime(1010, audioCtx.currentTime + duration);
 
-            osc1.connect(gain);
-            osc2.connect(gain);
-            gain.connect(audioCtx.destination);
+    // Controlled volume swell
+    gain.gain.setValueAtTime(0, audioCtx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.2, audioCtx.currentTime + 1.5); // Peak volume
+    gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + duration); // Fade out at end
 
-            osc1.start(); osc2.start();
-            osc1.stop(audioCtx.currentTime + 3.5); osc2.stop(audioCtx.currentTime + 3.5);
-        }
+    osc1.connect(gain);
+    osc2.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    osc1.start(); osc2.start();
+    osc1.stop(audioCtx.currentTime + duration); 
+    osc2.stop(audioCtx.currentTime + duration);
+}
 
         function applyCustomColor(hex) {
             const root = document.documentElement;
@@ -944,51 +990,71 @@
             triggerWarpSequence(snapshot);
         }
 
-        function triggerWarpSequence(capsule) {
-            activeCapsule = capsule;
-            const overlay = document.getElementById('warpOverlay');
-            const flash = document.getElementById('flashBang');
+function triggerWarpSequence(capsule) {
+    activeCapsule = capsule;
+    const overlay = document.getElementById('warpOverlay');
+    const flash = document.getElementById('flashBang');
+    const msg = document.getElementById('warpMessage');
+    const core = document.getElementById('warpCore');
+    
+    overlay.classList.add('active');
+    playWarpSound(); // You might want to extend the sound duration in your audio function or let it loop
+
+    // Phase 1: Preparation (0s - 1.5s)
+    msg.innerText = "Entering the capsule...";
+    core.style.animation = 'warpCoreExpand 6s cubic-bezier(0.8, 0, 0.2, 1) forwards';
+
+    // Phase 2: Deconstruction (1.5s - 4.5s)
+    setTimeout(() => {
+        msg.innerText = "Deconstructing Timeline...";
+        
+        const entries = Object.values(capsule.entries);
+        if (entries.length === 0) entries.push("...", "Time passes", "Waiting");
+
+        let spawnCount = 0;
+        const totalSpawns = 30; // More entries
+        const spawnInterval = setInterval(() => {
+            if (spawnCount > totalSpawns) { clearInterval(spawnInterval); return; }
+
+            const el = document.createElement('div');
+            el.className = 'flying-entry';
             
-            overlay.classList.add('active');
-            playWarpSound();
+            let text = entries[Math.floor(Math.random() * entries.length)];
+            el.innerText = text.length > 40 ? text.substring(0, 40) + '...' : text;
 
-            const core = document.getElementById('warpCore');
-            core.style.animation = 'none';
-            core.offsetHeight; 
-            core.style.animation = 'warpCoreExpand 3.4s cubic-bezier(0.8, 0, 0.2, 1) forwards';
+            // Random flight paths
+            const angle = Math.random() * Math.PI * 2;
+            const distance = 20 + Math.random() * 30;
+            el.style.left = `${50 + Math.cos(angle) * distance}%`;
+            el.style.top = `${50 + Math.sin(angle) * distance}%`;
+            
+            // Speed up the fly-past as we get closer to the end
+            const duration = 1.5 - (spawnCount * 0.02);
+            el.style.animationDuration = `${duration}s`;
 
-            const entries = Object.values(capsule.entries);
-            if (entries.length === 0) entries.push("You were quiet this day.", "Time keeps moving.", "A memory unwritten.");
+            overlay.appendChild(el);
+            setTimeout(() => el.remove(), duration * 1000);
+            spawnCount++;
+        }, 80);
+    }, 1500);
 
-            let spawnCount = 0;
-            const spawnInterval = setInterval(() => {
-                if (spawnCount > 30) { clearInterval(spawnInterval); return; }
+    // Phase 3: Final Approach (4.5s - 5.8s)
+    setTimeout(() => {
+        msg.innerText = "Arrival Imminent";
+    }, 4500);
 
-                const el = document.createElement('div');
-                el.className = 'flying-entry';
-                
-                let text = entries[Math.floor(Math.random() * entries.length)];
-                if(text.length > 30) text = text.substring(0, 30) + '...';
-                el.innerText = text;
-
-                const isLeft = Math.random() > 0.5;
-                el.style.left = isLeft ? `${Math.random() * 25}%` : `${75 + Math.random() * 25}%`;
-                el.style.top = `${10 + Math.random() * 80}%`;
-
-                overlay.appendChild(el);
-                setTimeout(() => el.remove(), 1200); 
-                spawnCount++;
-            }, 90);
-
-            setTimeout(() => {
-                flash.classList.add('active');
-                setTimeout(() => {
-                    overlay.classList.remove('active');
-                    showEOY(capsule);
-                    setTimeout(() => flash.classList.remove('active'), 200);
-                }, 150);
-            }, 3300);
-        }
+    // Phase 4: The Flash (6s)
+    setTimeout(() => {
+        flash.classList.add('active');
+        setTimeout(() => {
+            overlay.classList.remove('active');
+            showEOY(capsule);
+            // Clean up messages for next time
+            msg.innerText = "Initializing...";
+            setTimeout(() => flash.classList.remove('active'), 400);
+        }, 200);
+    }, 6000);
+}
 
         function showEOY(capsule) {
             nav('screen-unlocked');
