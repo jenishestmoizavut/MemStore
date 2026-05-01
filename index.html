@@ -257,8 +257,8 @@ will-change: transform, opacity;
         .dev-gear { 
             position: fixed; bottom: 15px; right: 15px; width: 30px; height: 30px; 
             opacity: 0.1; cursor: pointer; transition: 0.3s; color: white; 
-            display: none; align-items: center; justify-content: center; font-size: 1.2rem; z-index: 100;
-
+            display: flex; align-items: center; justify-content: center; font-size: 1.2rem; z-index: 100;
+display: none;
         }
         .dev-gear:hover { opacity: 1; }
 
@@ -395,6 +395,23 @@ will-change: transform, opacity;
     95% { transform: scale(100); opacity: 1; } /* Final snap */
     100% { transform: scale(100); opacity: 0; }
 }
+.danger-zone-btn {
+    width: 100%;
+    background: rgba(239, 68, 68, 0.05);
+    color: #fca5a5;
+    border: 1px solid rgba(252, 165, 165, 0.2);
+    padding: 16px;
+    border-radius: 14px;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+}
+.danger-zone-btn:hover { 
+    background: rgba(239, 68, 68, 0.15); 
+    border-color: #ef4444; 
+}
     </style>
 </head>
 <body>
@@ -421,7 +438,6 @@ will-change: transform, opacity;
             <button class="primary-btn" onclick="openActiveVault()">Enter Vault</button>
         </div>
 
-        <button id="btnBeginExperiment" class="primary-btn" onclick="nav('screen-setup')">Begin the Experiment</button>
         
         <div id="previousYearsHome" style="display: none; margin-top: 14px;">
             <button class="secondary-btn" onclick="showArchiveHome()">View Previous Years</button>
@@ -441,8 +457,9 @@ will-change: transform, opacity;
         <a href="https://jenishestmoizavut.github.io/jenish.one" target="_blank" class="secondary-btn-link">
             Visit the Developer's Hub
         </a>
-    </div>
-
+   
+<button id="btnBeginExperiment" class="primary-btn" onclick="nav('screen-setup')">Begin the Experiment</button>
+    </div>     
     <div id="screen-setup" class="screen">
 <div class="top-bar" style="justify-content: flex-start; margin-bottom: 20px;">
     <button class="menu-btn" style="flex: 0 0 auto; padding: 8px 16px;" onclick="checkAppState()">
@@ -556,20 +573,32 @@ will-change: transform, opacity;
                 <button class="secondary-btn" onclick="revealRandom()">Pick One Randomly</button>
             </div>
             
-            <div id="reader" class="reader-card" style="display: none;">
-                <div style="display: flex; align-items: baseline; gap: 8px; margin-bottom: 10px;">
-                    <div class="reader-date" style="margin-bottom: 0;" id="readerDate"></div>
-                    <div id="readerTime" style="color: var(--muted); font-size: 0.85rem; font-family: monospace;"></div>
+                <div id="reader" class="reader-card" style="display: none;">
+                <!-- Fixed Header Flexbox -->
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+                    <div style="display: flex; align-items: baseline; gap: 8px;">
+                        <div class="reader-date" style="margin-bottom: 0;" id="readerDate"></div>
+                        <div id="readerTime" style="color: var(--muted); font-size: 0.85rem; font-family: monospace;"></div>
+                    </div>
+                    <button onclick="shareMemory()" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: var(--text); padding: 6px 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.1)'" title="Share Memory">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+                    </button>
                 </div>
                 
                 <img id="readerImage" class="reader-image" style="display: none;" src="">
                 <div class="reader-entry" id="readerEntry"></div>
 
                 <div class="reader-controls">
-                    <button class="secondary-btn" id="btnReaderPrev" onclick="moveReader(-1)">Previous</button>
-                    <button class="secondary-btn" id="btnReaderRandom" onclick="revealRandom()" style="display: none;">Another Day</button>
-                    <button class="secondary-btn" onclick="shareMemory()">Share</button>
-                    <button class="secondary-btn" id="btnReaderNext" onclick="moveReader(1)">Next</button>
+                    <button class="secondary-btn" id="btnReaderPrev" onclick="moveReader(-1)" style="flex: 0 0 50px; padding: 0;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+    </button>
+    
+    <button class="secondary-btn" id="btnReaderRandom" onclick="revealRandom()" style="display: none;">Another Day</button>
+    
+    <!-- Icon for Next -->
+    <button class="secondary-btn" id="btnReaderNext" onclick="moveReader(1)" style="flex: 0 0 50px; padding: 0;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+    </button>
                 </div>
                 <div class="reader-count" id="readerCount"></div>
             </div>
@@ -690,14 +719,17 @@ will-change: transform, opacity;
             const tracker = document.getElementById('activeVaultTracker');
             const beginBtn = document.getElementById('btnBeginExperiment');
 
-            if (memData) {
+         if (memData) {
                 if (!memData.drafts) memData.drafts = {};
                 if (!memData.timestamps) memData.timestamps = {};
                 
                 tracker.style.display = 'block';
+                
+                // Set to danger UI and add safety confirmation
                 beginBtn.textContent = 'Start New Vault (Deletes Current)';
-                beginBtn.className = 'secondary-btn'; 
+                beginBtn.className = 'danger-zone-btn'; 
                 beginBtn.style.marginTop = '12px';
+                beginBtn.onclick = confirmNewVault; 
 
                 const start = new Date(`${memData.startDate}T00:00:00`);
                 const now = new Date(`${getDateKey()}T00:00:00`);
@@ -709,9 +741,12 @@ will-change: transform, opacity;
                 document.getElementById('homeProgressText').innerText = `Day ${Math.min(daysPassed, 365)} of 365`;
             } else {
                 tracker.style.display = 'none';
+                
+                // Set to default UI and direct navigation
                 beginBtn.textContent = 'Begin the Experiment';
                 beginBtn.className = 'primary-btn';
                 beginBtn.style.marginTop = '0';
+                beginBtn.onclick = () => nav('screen-setup');
             }
         }
 
@@ -719,7 +754,11 @@ will-change: transform, opacity;
             nav('screen-main');
             renderApp();
         }
-
+function confirmNewVault() {
+            if (confirm("Are you sure? This will permanently delete your current progress and data for this year.")) {
+                nav('screen-setup');
+            }
+        }
         function initializeVault() {
             if (memData) {
                 if(!confirm("WARNING: Starting a new timeline will permanently overwrite your active vault! Are you absolutely sure?")) return;
