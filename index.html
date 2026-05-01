@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://apis.google.com/js/api.js" async defer></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
@@ -454,6 +456,10 @@ display: none;
         </label>
     </div>
 </div>
+<button class="secondary-btn" id="btnGoogleSync" onclick="handleAuthClick()">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+    Sign in (to access your memories remotely!) 
+</button>
         <a href="https://jenishestmoizavut.github.io/jenish.one" target="_blank" class="secondary-btn-link">
             Visit the Developer's Hub
         </a>
@@ -666,6 +672,11 @@ display: none;
         }
 
         // --- APP STATE ---
+const CLIENT_ID = '919726795259-ua84ao5jbg6ob3tk96nkc4htkdo2ig42.apps.googleusercontent.com'; // Paste your actual ID here
+    const SCOPES = 'https://www.googleapis.com/auth/drive.appdata';
+
+    let tokenClient;
+    let accessToken = null;
         let memData = null;
         let archives = [];
         let activeCapsule = null;
@@ -679,9 +690,21 @@ display: none;
         document.getElementById('colorPicker').value = savedColor;
         applyCustomColor(savedColor);
 
-        // Run the async boot sequence
-        bootApp();
+// Replace the old bootApp() call with this:
+    window.onload = async function () {
+        // Initialize Google Identity Services
+        tokenClient = google.accounts.oauth2.initTokenClient({
+            client_id: CLIENT_ID,
+            scope: SCOPES,
+            callback: (tokenResponse) => {
+                accessToken = tokenResponse.access_token;
+                syncVaultToDrive(); 
+            },
+        });
 
+        // Run your existing boot sequence
+        await bootApp(); 
+    };
         async function bootApp() {
             memData = await loadFromDB('activeVault');
             archives = await loadFromDB('archives') || [];
@@ -1356,7 +1379,86 @@ async function exportBackup() {
         alert("Failed to export backup. Ensure you have an active vault.");
     }
 }
+async function syncVaultToDrive() {
+    if (!accessToken) return;
+    console.log("Starting Sync...");
 
+    try {
+        // 1. Package the data (same as your local export)
+        const backupData = { 
+            activeVault: await loadFromDB('activeVault'), 
+            archives: await loadFromDB('archives') || [], 
+            exportDate: new Date().toISOString() 
+        };
+
+        // 2. Check if a backup already exists in the hidden folder
+        const listResponse = await fetch('https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=name="MemStore_Backup.json"', {
+            headers: { 'Authorization': `Bearer ${accessToken}` }
+        });
+        const list = await listResponse.json();
+
+        const fileMetadata = {
+            name: 'MemStore_Backup.json',
+            parents: ['appDataFolder']
+        };
+        const blob = new Blob([JSON.stringify(backupData)], { type: 'application/json' });
+        const formData = new FormData();
+        formData.append('metadata', new Blob([JSON.stringify(fileMetadata)], { type: 'application/json' }));
+        formData.append('file', blob);
+
+        if (list.files && list.files.length > 0) {
+            // Update existing file
+            const fileId = list.files[0].id;
+            await fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=multipart`, {
+                method: 'PATCH',
+                headers: { 'Authorization': `Bearer ${accessToken}` },
+                body: formData
+            });
+            alert("Sync Complete: Cloud Backup Updated!");
+        } else {
+            // Create new file
+            await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${accessToken}` },
+                body: formData
+            });
+            alert("Sync Complete: First Cloud Backup Created!");
+        }
+    } catch (err) {
+        console.error(err);
+        alert("Sync Failed. Check console for details.");
+    }
+}
+
+// Function to pull data from cloud (Add this if you want a 'Restore' button too)
+async function restoreFromDrive() {
+    if (!accessToken) return handleAuthClick();
+    
+    const listResponse = await fetch('https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=name="MemStore_Backup.json"', {
+        headers: { 'Authorization': `Bearer ${accessToken}` }
+    });
+    const list = await listResponse.json();
+
+    if (list.files && list.files.length > 0) {
+        const fileId = list.files[0].id;
+        const fileResponse = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
+            headers: { 'Authorization': `Bearer ${accessToken}` }
+        });
+        const data = await fileResponse.json();
+        
+        if (confirm("Cloud backup found! Overwrite local memories with cloud version?")) {
+            await saveToDB('activeVault', data.activeVault);
+            await saveToDB('archives', data.archives);
+            location.reload();
+        }
+    } else {
+        alert("No backup found on Google Drive.");
+    }
+}
+function handleAuthClick() {
+        // This opens the secure Google popup
+        tokenClient.requestAccessToken({prompt: 'consent'});
+    }
 function importBackup(event) {
     const file = event.target.files[0];
     if (!file) return;
