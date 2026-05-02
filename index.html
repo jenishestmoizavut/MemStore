@@ -1397,6 +1397,7 @@ auth.onAuthStateChanged(user => {
         
         // Change the button's function to logout when clicked
         syncBtn.onclick = handleSignOut;
+        setupRealTimeSync(user);
     } else {
         syncBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg> Sign in (to access your memories remotely!)`;
         syncBtn.style.borderColor = "rgba(255,255,255,0.1)";
@@ -1520,6 +1521,36 @@ window.onload = bootApp;
   // Forces the waiting service worker to become the active service worker
   self.skipWaiting();
 });
+        // --- NEW: REAL-TIME SYNC LISTENER ---
+function setupRealTimeSync(user) {
+    // Listen for any changes in your Firebase document
+    db.collection("users").doc(user.uid).onSnapshot(async (doc) => {
+        if (doc.exists) {
+            const cloudData = doc.data();
+            
+            // Only update if the cloud data is different/newer than local data
+            // We compare the IDs or timestamps to prevent infinite reload loops
+            if (JSON.stringify(cloudData.vault) !== JSON.stringify(memData)) {
+                console.log("Cloud update detected! Syncing memories...");
+                
+                memData = cloudData.vault;
+                archives = cloudData.archives || [];
+                
+                // Save the new data to your local device storage (IndexedDB)
+                await saveToDB('activeVault', memData);
+                await saveToDB('archives', archives);
+                
+                // Refresh the UI so the new "One Good Thing" appears
+                renderApp(); 
+                
+                // Optional: Show a subtle notification or just let it update 'vibe' style
+                document.getElementById('saveStatus').innerText = "Synced from cloud";
+            }
+        }
+    }, (error) => {
+        console.error("Sync error:", error);
+    });
+}
     </script>
 <footer style="margin-top: auto; padding: 40px 0 20px 0; text-align: center; opacity: 0.4; font-size: 0.8rem; letter-spacing: 0.5px;">
     <p style="margin: 0;">© 2026 Jenish</p>
