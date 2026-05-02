@@ -7,11 +7,8 @@ const ASSETS = [
 
 // Install event: Cache the essential files
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS);
-    })
-  );
+  // Forces the waiting service worker to become the active service worker
+  self.skipWaiting();
 });
 
 // Fetch event: Serve from cache if offline
