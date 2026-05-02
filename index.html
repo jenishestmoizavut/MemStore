@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
@@ -415,52 +418,63 @@ display: none;
     </style>
 </head>
 <body>
-    <div id="screen-onboard" class="screen">
+<div id="screen-onboard" class="screen">
         <div class="top-bar" style="justify-content: flex-end; margin-bottom: 0;">
             <button class="menu-btn" style="flex: 0 0 auto; padding: 8px 12px;" onclick="shareApp()" title="Share App">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
             </button>
         </div>
         <div style="margin: 20px 0;">
-    <img src="logo.png" alt="MemStore Logo" style="width: 80px; height: 80px; border-radius: 18px; box-shadow: 0 0 20px var(--accent-glow);">
-    <h1 style="margin-top: 10px;">MemStore</h1>
-</div>
+            <img src="logo.png" alt="MemStore Logo" style="width: 80px; height: 80px; border-radius: 18px; box-shadow: 0 0 20px var(--accent-glow);">
+            <h1 style="margin-top: 10px;">MemStore</h1>
+        </div>
         <p class="subtitle">A 365-day time capsule.<br>Rule #1: Write at least <b>one good thing</b> that happened today.<br>Rule #2: You can't read past entries until the year is up.</p>
         
         <div style="background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 12px; padding: 14px; margin-bottom: 24px;">
             <p style="margin: 0; font-size: 0.9rem; color: #a5b4fc;">🛡️ <b>Privacy First:</b> Your memories never leave your device. We have no servers, no tracking, and no way to read your vault.</p>
         </div>
 
-        <div id="activeVaultTracker" style="display: none; background: var(--card); padding: 22px; border-radius: 16px; margin-bottom: 24px; border: 1px solid rgba(255,255,255,0.1);">
+        <!-- 1. ACTIVE VAULT (Moved to top) -->
+        <div id="activeVaultTracker" style="display: none; background: var(--card); padding: 22px; border-radius: 16px; margin-bottom: 16px; border: 1px solid rgba(255,255,255,0.1);">
             <h3 style="margin: 0 0 15px 0; font-size: 1.2rem; color: var(--accent);">Current Time Capsule</h3>
             <div class="progress-container" style="margin-bottom: 8px;"><div class="progress-bar" id="homeProgressBar"></div></div>
             <div class="progress-text" id="homeProgressText" style="text-align: center; margin-bottom: 18px;">Day X of 365</div>
             <button class="primary-btn" onclick="openActiveVault()">Enter Vault</button>
         </div>
-
         
-        <div id="previousYearsHome" style="display: none; margin-top: 14px;">
+        <!-- 2. ARCHIVES -->
+        <div id="previousYearsHome" style="display: none; margin-bottom: 24px;">
             <button class="secondary-btn" onclick="showArchiveHome()">View Previous Years</button>
         </div>
-<div style="margin-top: 24px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px;">
-    <p style="font-size: 0.9rem; color: var(--muted); margin-bottom: 12px;">Data Management</p>
-    <div style="display: flex; gap: 10px;">
-        <button class="secondary-btn" onclick="exportBackup()" style="padding: 12px; font-size: 0.9rem;">
-            Export Backup
-        </button>
-        <label class="secondary-btn" style="padding: 12px; font-size: 0.9rem; cursor: pointer; text-align: center; flex: 1;">
-            Restore Backup
-            <input type="file" accept=".json" style="display: none;" onchange="importBackup(event)">
-        </label>
-    </div>
-</div>
+
+        <!-- 3. DATA MANAGEMENT (Cleaned up) -->
+        <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px; margin-bottom: 24px;">
+            <p style="font-size: 0.9rem; color: var(--muted); margin-bottom: 12px;">Cloud Sync & Local Backup</p>
+            
+            <button class="secondary-btn" id="btnGoogleSync" onclick="handleAuthClick()" style="margin-bottom: 12px;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                Sign in (to access your memories remotely!) 
+            </button>
+
+            <div style="display: flex; gap: 10px;">
+                <button class="secondary-btn" onclick="exportBackup()" style="padding: 12px; font-size: 0.9rem; flex: 1;">
+                    Export Backup
+                </button>
+                <label class="secondary-btn" style="padding: 12px; font-size: 0.9rem; cursor: pointer; text-align: center; flex: 1;">
+                    Restore Backup
+                    <input type="file" accept=".json" style="display: none;" onchange="importBackup(event)">
+                </label>
+            </div>
+        </div>
+
+        <!-- 4. DANGER ZONE (Moved to bottom) -->
+        <button id="btnBeginExperiment" class="primary-btn" onclick="nav('screen-setup')">Begin the Experiment</button>
+        
+        <!-- 5. DEV HUB -->
         <a href="https://jenishestmoizavut.github.io/jenish.one" target="_blank" class="secondary-btn-link">
             Visit the Developer's Hub
         </a>
-   
-<button id="btnBeginExperiment" class="primary-btn" onclick="nav('screen-setup')">Begin the Experiment</button>
-    </div>     
-    <div id="screen-setup" class="screen">
+    </div>	  <div id="screen-setup" class="screen">
 <div class="top-bar" style="justify-content: flex-start; margin-bottom: 20px;">
     <button class="menu-btn" style="flex: 0 0 auto; padding: 8px 16px;" onclick="checkAppState()">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
@@ -666,6 +680,7 @@ display: none;
         }
 
         // --- APP STATE ---
+
         let memData = null;
         let archives = [];
         let activeCapsule = null;
@@ -679,8 +694,6 @@ display: none;
         document.getElementById('colorPicker').value = savedColor;
         applyCustomColor(savedColor);
 
-        // Run the async boot sequence
-        bootApp();
 
         async function bootApp() {
             memData = await loadFromDB('activeVault');
@@ -750,6 +763,20 @@ display: none;
             }
         }
 
+// Paste your copied config here
+const firebaseConfig = {
+  apiKey: "AIzaSyCJreQ92qmELHwVwx5JdXok-9m1Wnwb3cg",
+  authDomain: "memstore-f6312.firebaseapp.com",
+  projectId: "memstore-f6312",
+  storageBucket: "memstore-f6312.appspot.com",
+  messagingSenderId: "1013833560351",
+  appId: "1:1013833560351:web:5c14ba8ca722deb1ae802a"
+
+};
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
         function openActiveVault() {
             nav('screen-main');
             renderApp();
@@ -976,6 +1003,7 @@ function playWarpSound() {
             saveToDB('activeVault', memData); 
 
             playSealSound();
+saveMemoriesToCloud();
             const overlay = document.getElementById('animOverlay');
             overlay.classList.add('active');
             
@@ -1356,7 +1384,106 @@ async function exportBackup() {
         alert("Failed to export backup. Ensure you have an active vault.");
     }
 }
+// --- FIREBASE CLOUD SYNC SYSTEM ---
 
+// 1. Listen for auth state changes so the button stays updated on page reload
+auth.onAuthStateChanged(user => {
+    const syncBtn = document.getElementById('btnGoogleSync');
+    if (user) {
+        // Change the text to show the user and the logout option
+        syncBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg> Logged in as ${user.displayName} (Click to Logout)`;
+        syncBtn.style.borderColor = "#4ade80"; 
+        syncBtn.style.color = "#4ade80";
+        
+        // Change the button's function to logout when clicked
+        syncBtn.onclick = handleSignOut;
+    } else {
+        syncBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg> Sign in (to access your memories remotely!)`;
+        syncBtn.style.borderColor = "rgba(255,255,255,0.1)";
+        syncBtn.style.color = "var(--text)";
+        
+        // Change the button's function back to sign in
+        syncBtn.onclick = handleAuthClick;
+    }
+});
+function handleSignOut() {
+    if (confirm("Do you want to log out of MemStore?")) {
+        auth.signOut().then(() => {
+            console.log("User signed out.");
+            // Optional: You can choose to reload the page to clear the local session
+            // location.reload();
+        }).catch((error) => {
+            console.error("Sign out error", error);
+        });
+    }
+}
+// 2. Handle the Sign-In button click
+function handleAuthClick() {
+    if (auth.currentUser) {
+        alert(`You are already connected as ${auth.currentUser.displayName}!`);
+        return;
+    }
+    
+    const provider = new firebase.auth.GoogleAuthProvider();
+    auth.signInWithPopup(provider).then((result) => {
+        // Automatically try to pull data if they just signed in
+        loadMemoriesFromCloud(false); 
+    }).catch((error) => {
+        console.error("Auth error", error);
+        alert("Sign in failed. Please try again.");
+    });
+}
+
+// 3. Save to Firestore (Called automatically when you seal an entry)
+async function saveMemoriesToCloud() {
+    const user = auth.currentUser;
+    if (!user || !memData) return; // Silently abort if not logged in or no data
+
+    try {
+        await db.collection("users").doc(user.uid).set({
+            vault: memData,
+            archives: archives,
+            lastSynced: new Date().toISOString()
+        });
+        console.log("Memories secured in the cloud!");
+    } catch (e) {
+        console.error("Cloud Save Error", e);
+    }
+}
+
+// 4. Load from Firestore (Linked to your "Pull from Cloud" button)
+async function loadMemoriesFromCloud(showAlertIfEmpty = true) {
+    const user = auth.currentUser;
+    if (!user) {
+        alert("Please sign in first to pull your memories from the cloud.");
+        return;
+    }
+
+    try {
+        const doc = await db.collection("users").doc(user.uid).get();
+        if (doc.exists) {
+            const cloudData = doc.data();
+            if (confirm("Found your memories in the cloud! Do you want to overwrite your local device memories with the cloud version?")) {
+                memData = cloudData.vault;
+                archives = cloudData.archives || [];
+                await saveToDB('activeVault', memData);
+                await saveToDB('archives', archives);
+                alert("Memories restored! Reloading...");
+                location.reload(); 
+            }
+        } else {
+            if (showAlertIfEmpty) {
+                alert("No backup found in the cloud yet. Seal an entry to automatically back it up!");
+            }
+            // If they just signed in and have no cloud data, let's push their local data up
+            saveMemoriesToCloud();
+        }
+    } catch (e) {
+        console.error("Cloud Load Error", e);
+        alert("Failed to connect to the cloud.");
+    }
+}
+// Function to pull data from cloud (Add this if you want a 'Restore' button too)
 function importBackup(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -1388,6 +1515,7 @@ function importBackup(event) {
     };
     reader.readAsText(file);
 }
+window.onload = bootApp;
     </script>
 <footer style="margin-top: auto; padding: 40px 0 20px 0; text-align: center; opacity: 0.4; font-size: 0.8rem; letter-spacing: 0.5px;">
     <p style="margin: 0;">© 2026 Jenish</p>
