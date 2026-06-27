@@ -1437,7 +1437,6 @@ display: none;
 
         // --- FIREBASE CLOUD SYNC SYSTEM (E2EE) ---
         let cloudSyncUnsubscribe = null;
-        let cloudSyncStarting = false;
 
         function getSyncPassphrase() {
             let passphrase = sessionStorage.getItem('memSyncPassphrase');
@@ -1450,53 +1449,30 @@ display: none;
             return passphrase;
         }
 
-        async function enableCloudSync(user, pullFromCloud = false) {
-            if (cloudSyncStarting) return;
-            cloudSyncStarting = true;
-            const passphrase = getSyncPassphrase();
-            if (!passphrase) {
-                alert("Sync disabled: A passphrase is required for Zero-Knowledge encryption.");
-                await auth.signOut();
-                cloudSyncStarting = false;
-                return;
-            }
-
-            try {
-                const doc = await db.collection("users").doc(user.uid).get();
-                if (doc.exists) {
-                    const cloudData = doc.data();
-                    if (cloudData.vault) await decryptData(cloudData.vault, passphrase);
-                    if (cloudData.archives) await decryptData(cloudData.archives, passphrase);
-                }
-            } catch (e) {
-                sessionStorage.removeItem('memSyncPassphrase');
-                alert("Sync disabled: that passphrase could not decrypt your cloud memories.");
-                await auth.signOut();
-                cloudSyncStarting = false;
-                return;
-            }
-
-            updateSyncButton(user);
-            startSync(user);
-            if (pullFromCloud) await loadMemoriesFromCloud(false);
-            cloudSyncStarting = false;
-        }
-
         function updateSyncButton(user) {
             const syncBtn = document.getElementById('btnGoogleSync');
-            syncBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg> Logged in as ${user.displayName} (Encrypted Sync Active - Click to Logout)`;
+            syncBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg> Logged in as ${user.displayName} (Encrypted Sync - Click to Logout)`;
             syncBtn.style.borderColor = "#4ade80";
             syncBtn.style.color = "#4ade80";
             syncBtn.onclick = handleSignOut;
         }
 
+        function enableCloudSync(user, pullFromCloud = false) {
+            const passphrase = getSyncPassphrase();
+            if (!passphrase) {
+                alert("Sync disabled: A passphrase is required for Zero-Knowledge encryption.");
+                auth.signOut();
+                return;
+            }
+
+            updateSyncButton(user);
+            startSync(user);
+            if (pullFromCloud) loadMemoriesFromCloud(false);
+        }
+
         auth.onAuthStateChanged(user => {
             const syncBtn = document.getElementById('btnGoogleSync');
             if (user) {
-                syncBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M12 6v6l4 2"></path></svg> Checking encrypted sync...`;
-                syncBtn.style.borderColor = "rgba(255,255,255,0.1)";
-                syncBtn.style.color = "var(--muted)";
-                syncBtn.onclick = null;
                 enableCloudSync(user, false);
             } else {
                 if (cloudSyncUnsubscribe) {
@@ -1504,7 +1480,6 @@ display: none;
                     cloudSyncUnsubscribe = null;
                 }
                 sessionStorage.removeItem('memSyncPassphrase');
-                cloudSyncStarting = false;
                 syncBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg> Sign in (to access your memories remotely!)`;
                 syncBtn.style.borderColor = "rgba(255,255,255,0.1)";
                 syncBtn.style.color = "var(--text)";
@@ -1567,7 +1542,6 @@ display: none;
                         } catch (decryptionError) {
                             alert("Decryption Failed! The passphrase you entered does not match the one used to encrypt this cloud backup.");
                             sessionStorage.removeItem('memSyncPassphrase');
-                            await auth.signOut();
                         }
                     }
                 } else {
@@ -1605,9 +1579,6 @@ display: none;
                         }
                     } catch (err) {
                         console.error("Sync Engine: Decryption failed (bad passphrase or corrupt data).", err);
-                        sessionStorage.removeItem('memSyncPassphrase');
-                        alert("Encrypted sync stopped: the passphrase could not decrypt the cloud vault.");
-                        await auth.signOut();
                     }
                 }
             });
