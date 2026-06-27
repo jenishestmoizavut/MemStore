@@ -681,8 +681,7 @@ display: none;
     <div id="warpMessage" class="warp-message">Initializing...</div>
     <div class="flash-bang" id="flashBang"></div>
 </div>
-
-    <script>
+<script>
         // --- INDEXEDDB STORAGE SYSTEM ---
         const dbName = 'MemStoreDB';
         const storeName = 'vaults';
@@ -722,7 +721,6 @@ display: none;
         }
 
         // --- APP STATE ---
-
         let memData = null;
         let archives = [];
         let activeCapsule = null;
@@ -735,7 +733,6 @@ display: none;
         let savedColor = localStorage.getItem('memCustomColor') || '#6366f1';
         document.getElementById('colorPicker').value = savedColor;
         applyCustomColor(savedColor);
-
 
         async function bootApp() {
             memData = await loadFromDB('activeVault');
@@ -761,10 +758,9 @@ display: none;
             checkAppState(); 
         }
 
-      function checkAppState() {
+        function checkAppState() {
             nav('screen-onboard'); 
             
-            // Set dynamic current year in the UI
             const currentYear = new Date().getFullYear();
             const nyLabel = document.getElementById('newYearLabel');
             if (nyLabel) {
@@ -774,13 +770,12 @@ display: none;
             const tracker = document.getElementById('activeVaultTracker');
             const beginBtn = document.getElementById('btnBeginExperiment');
 
-         if (memData) {
+            if (memData) {
                 if (!memData.drafts) memData.drafts = {};
                 if (!memData.timestamps) memData.timestamps = {};
                 
                 tracker.style.display = 'block';
                 
-                // Set to danger UI and add safety confirmation
                 beginBtn.textContent = 'Start New Vault (Deletes Current)';
                 beginBtn.className = 'danger-zone-btn'; 
                 beginBtn.style.marginTop = '12px';
@@ -796,8 +791,6 @@ display: none;
                 document.getElementById('homeProgressText').innerText = `Day ${Math.min(daysPassed, 365)} of 365`;
             } else {
                 tracker.style.display = 'none';
-                
-                // Set to default UI and direct navigation
                 beginBtn.textContent = 'Begin the Experiment';
                 beginBtn.className = 'primary-btn';
                 beginBtn.style.marginTop = '0';
@@ -805,31 +798,33 @@ display: none;
             }
         }
 
-// Paste your copied config here
-const firebaseConfig = {
-  apiKey: "AIzaSyCJreQ92qmELHwVwx5JdXok-9m1Wnwb3cg",
-  authDomain: "memstore-f6312.firebaseapp.com",
-  projectId: "memstore-f6312",
-  storageBucket: "memstore-f6312.appspot.com",
-  messagingSenderId: "1013833560351",
-  appId: "1:1013833560351:web:5c14ba8ca722deb1ae802a",
-  measurementId: "G-KVGD7JCDYL"
-};
+        // Firebase Config
+        const firebaseConfig = {
+          apiKey: "AIzaSyCJreQ92qmELHwVwx5JdXok-9m1Wnwb3cg",
+          authDomain: "memstore-f6312.firebaseapp.com",
+          projectId: "memstore-f6312",
+          storageBucket: "memstore-f6312.appspot.com",
+          messagingSenderId: "1013833560351",
+          appId: "1:1013833560351:web:5c14ba8ca722deb1ae802a",
+          measurementId: "G-KVGD7JCDYL"
+        };
 
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();
-const analytics = firebase.analytics();
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        const analytics = firebase.analytics();
+
         function openActiveVault() {
             nav('screen-main');
             renderApp();
         }
         
-function confirmNewVault() {
+        function confirmNewVault() {
             if (confirm("Are you sure? This will permanently delete your current progress and data for this year.")) {
                 nav('screen-setup');
             }
         }
+
         function initializeVault() {
             if (memData) {
                 if(!confirm("WARNING: Starting a new timeline will permanently overwrite your active vault! Are you absolutely sure?")) return;
@@ -843,7 +838,7 @@ function confirmNewVault() {
                 if (!custom) return alert("Please select a date.");
                 startDateStr = custom;
             }
-// Generates a unique ID so vaults on the same date never overwrite each other
+
             memData = { id: Date.now().toString(), startDate: startDateStr, entries: {}, drafts: {}, timestamps: {} };            
             saveToDB('activeVault', memData); 
             openActiveVault(); 
@@ -863,37 +858,28 @@ function confirmNewVault() {
             osc.stop(audioCtx.currentTime + 0.05);
         }
 
-function playWarpSound() {
-    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const osc1 = audioCtx.createOscillator();
-    const osc2 = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-
-    const duration = 6.0; // Matches the new warp duration
-
-    osc1.type = 'sine';
-    osc2.type = 'sine';
-    
-    // Ramp the frequency over the full 6 seconds
-    osc1.frequency.setValueAtTime(300, audioCtx.currentTime);
-    osc1.frequency.linearRampToValueAtTime(1000, audioCtx.currentTime + duration);
-    
-    osc2.frequency.setValueAtTime(305, audioCtx.currentTime);
-    osc2.frequency.linearRampToValueAtTime(1010, audioCtx.currentTime + duration);
-
-    // Controlled volume swell
-    gain.gain.setValueAtTime(0, audioCtx.currentTime);
-    gain.gain.linearRampToValueAtTime(0.2, audioCtx.currentTime + 1.5); // Peak volume
-    gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + duration); // Fade out at end
-
-    osc1.connect(gain);
-    osc2.connect(gain);
-    gain.connect(audioCtx.destination);
-
-    osc1.start(); osc2.start();
-    osc1.stop(audioCtx.currentTime + duration); 
-    osc2.stop(audioCtx.currentTime + duration);
-}
+        function playWarpSound() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc1 = audioCtx.createOscillator();
+            const osc2 = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            const duration = 6.0; 
+            osc1.type = 'sine';
+            osc2.type = 'sine';
+            osc1.frequency.setValueAtTime(300, audioCtx.currentTime);
+            osc1.frequency.linearRampToValueAtTime(1000, audioCtx.currentTime + duration);
+            osc2.frequency.setValueAtTime(305, audioCtx.currentTime);
+            osc2.frequency.linearRampToValueAtTime(1010, audioCtx.currentTime + duration);
+            gain.gain.setValueAtTime(0, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.2, audioCtx.currentTime + 1.5); 
+            gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + duration);
+            osc1.connect(gain);
+            osc2.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc1.start(); osc2.start();
+            osc1.stop(audioCtx.currentTime + duration); 
+            osc2.stop(audioCtx.currentTime + duration);
+        }
 
         function applyCustomColor(hex) {
             const root = document.documentElement;
@@ -941,7 +927,6 @@ function playWarpSound() {
         function refreshPreviousYearsButton() { 
             const prevYearsOnboard = document.getElementById('previousYearsHome');
             if (prevYearsOnboard) prevYearsOnboard.style.display = archives.length ? 'block' : 'none'; 
-            
             const btnArchivesMenu = document.getElementById('btnArchivesMenu');
             if (btnArchivesMenu) btnArchivesMenu.style.display = archives.length ? 'flex' : 'none';
         }
@@ -952,20 +937,16 @@ function playWarpSound() {
             return startYear === finalYear ? `${startYear}` : `${startYear}-${finalYear}`;
         }
 
-     function archiveCurrentVault() {
-            // Assign an ID if it's a legacy vault from before this update
+        function archiveCurrentVault() {
             if (!memData.id) memData.id = Date.now().toString();
-            
             const snapshot = { ...memData, completedAt: new Date().toISOString(), label: getCapsuleLabel(memData) };
-            
-            // FIX: Filter by unique ID, NOT startDate. This prevents overwrites.
             archives = archives.filter(capsule => capsule.id !== snapshot.id);
             archives.unshift(snapshot);
-            
             saveToDB('archives', archives); 
             refreshPreviousYearsButton();
             return snapshot;
         }
+
         function renderApp() {
             const todayStr = getDateKey();
             const finalDateStr = getFinalDateStr();
@@ -1045,9 +1026,9 @@ function playWarpSound() {
             delete memData.drafts[activeEditDate];
             
             saveToDB('activeVault', memData); 
-
             playSealSound();
-saveMemoriesToCloud();
+            saveMemoriesToCloud();
+            
             const overlay = document.getElementById('animOverlay');
             overlay.classList.add('active');
             
@@ -1102,71 +1083,61 @@ saveMemoriesToCloud();
             triggerWarpSequence(snapshot);
         }
 
-function triggerWarpSequence(capsule) {
-    activeCapsule = capsule;
-    const overlay = document.getElementById('warpOverlay');
-    const flash = document.getElementById('flashBang');
-    const msg = document.getElementById('warpMessage');
-    const core = document.getElementById('warpCore');
-    
-    overlay.classList.add('active');
-    playWarpSound(); // You might want to extend the sound duration in your audio function or let it loop
-
-    // Phase 1: Preparation (0s - 1.5s)
-    msg.innerText = "Entering the capsule...";
-    core.style.animation = 'warpCoreExpand 6s cubic-bezier(0.8, 0, 0.2, 1) forwards';
-
-    // Phase 2: Deconstruction (1.5s - 4.5s)
-    setTimeout(() => {
-        msg.innerText = "Deconstructing Timeline...";
-        
-        const entries = Object.values(capsule.entries);
-        if (entries.length === 0) entries.push("...", "Time passes", "Waiting");
-
-        let spawnCount = 0;
-        const totalSpawns = 30; // More entries
-        const spawnInterval = setInterval(() => {
-            if (spawnCount > totalSpawns) { clearInterval(spawnInterval); return; }
-
-            const el = document.createElement('div');
-            el.className = 'flying-entry';
+        function triggerWarpSequence(capsule) {
+            activeCapsule = capsule;
+            const overlay = document.getElementById('warpOverlay');
+            const flash = document.getElementById('flashBang');
+            const msg = document.getElementById('warpMessage');
+            const core = document.getElementById('warpCore');
             
-            let text = entries[Math.floor(Math.random() * entries.length)];
-            el.innerText = text.length > 40 ? text.substring(0, 40) + '...' : text;
+            overlay.classList.add('active');
+            playWarpSound();
 
-            // Random flight paths
-            const angle = Math.random() * Math.PI * 2;
-            const distance = 20 + Math.random() * 30;
-            el.style.left = `${50 + Math.cos(angle) * distance}%`;
-            el.style.top = `${50 + Math.sin(angle) * distance}%`;
-            
-            // Speed up the fly-past as we get closer to the end
-            const duration = 1.5 - (spawnCount * 0.02);
-            el.style.animationDuration = `${duration}s`;
+            msg.innerText = "Entering the capsule...";
+            core.style.animation = 'warpCoreExpand 6s cubic-bezier(0.8, 0, 0.2, 1) forwards';
 
-            overlay.appendChild(el);
-            setTimeout(() => el.remove(), duration * 1000);
-            spawnCount++;
-        }, 80);
-    }, 1500);
+            setTimeout(() => {
+                msg.innerText = "Deconstructing Timeline...";
+                const entries = Object.values(capsule.entries);
+                if (entries.length === 0) entries.push("...", "Time passes", "Waiting");
 
-    // Phase 3: Final Approach (4.5s - 5.8s)
-    setTimeout(() => {
-        msg.innerText = "Arrival Imminent";
-    }, 4500);
+                let spawnCount = 0;
+                const totalSpawns = 30; 
+                const spawnInterval = setInterval(() => {
+                    if (spawnCount > totalSpawns) { clearInterval(spawnInterval); return; }
 
-    // Phase 4: The Flash (6s)
-    setTimeout(() => {
-        flash.classList.add('active');
-        setTimeout(() => {
-            overlay.classList.remove('active');
-            showEOY(capsule);
-            // Clean up messages for next time
-            msg.innerText = "Initializing...";
-            setTimeout(() => flash.classList.remove('active'), 400);
-        }, 200);
-    }, 6000);
-}
+                    const el = document.createElement('div');
+                    el.className = 'flying-entry';
+                    let text = entries[Math.floor(Math.random() * entries.length)];
+                    el.innerText = text.length > 40 ? text.substring(0, 40) + '...' : text;
+                    const angle = Math.random() * Math.PI * 2;
+                    const distance = 20 + Math.random() * 30;
+                    el.style.left = `${50 + Math.cos(angle) * distance}%`;
+                    el.style.top = `${50 + Math.sin(angle) * distance}%`;
+                    
+                    const duration = 1.5 - (spawnCount * 0.02);
+                    el.style.animationDuration = `${duration}s`;
+
+                    overlay.appendChild(el);
+                    setTimeout(() => el.remove(), duration * 1000);
+                    spawnCount++;
+                }, 80);
+            }, 1500);
+
+            setTimeout(() => {
+                msg.innerText = "Arrival Imminent";
+            }, 4500);
+
+            setTimeout(() => {
+                flash.classList.add('active');
+                setTimeout(() => {
+                    overlay.classList.remove('active');
+                    showEOY(capsule);
+                    msg.innerText = "Initializing...";
+                    setTimeout(() => flash.classList.remove('active'), 400);
+                }, 200);
+            }, 6000);
+        }
 
         function showEOY(capsule) {
             nav('screen-unlocked');
@@ -1181,7 +1152,6 @@ function triggerWarpSequence(capsule) {
 
             const grid = document.getElementById('arrivalGrid');
             grid.innerHTML = '';
-            
             let gridStart = new Date(`${capsule.startDate}T00:00:00`);
             const blocks = [];
             const entryIndices = [];
@@ -1194,7 +1164,6 @@ function triggerWarpSequence(capsule) {
                 const block = document.createElement('div');
                 block.className = 'day-block missed cascade-block'; 
                 block.style.animationDelay = `${i * 2}ms`; 
-                
                 grid.appendChild(block);
                 blocks.push(block);
 
@@ -1279,7 +1248,6 @@ function triggerWarpSequence(capsule) {
         async function showArchiveHome() {
             const list = document.getElementById('archiveList');
             list.innerHTML = '';
-            
             archives = await loadFromDB('archives') || [];
 
             if (archives.length === 0) {
@@ -1315,7 +1283,6 @@ function triggerWarpSequence(capsule) {
                 text: 'I am tracking my year in a 365-day time capsule. Build your own vault with MemStore!',
                 url: window.location.href 
             };
-            
             if (navigator.share) {
                 navigator.share(shareData).catch(err => console.log('Share canceled', err));
             } else {
@@ -1323,106 +1290,13 @@ function triggerWarpSequence(capsule) {
                 alert("App link copied to clipboard!");
             }
         }
-// --- END-TO-END ENCRYPTION ENGINE (Web Crypto API) ---
 
-function stringToBuffer(str) { return new TextEncoder().encode(str); }
-function bufferToString(buf) { return new TextDecoder().decode(buf); }
-function bufferToBase64(buf) { return btoa(String.fromCharCode(...new Uint8Array(buf))); }
-function base64ToBuffer(base64) { return Uint8Array.from(atob(base64), c => c.charCodeAt(0)).buffer; }
-
-// Derive an AES-GCM key from a user passphrase and a deterministic salt
-async function deriveKey(passphrase) {
-    const encoder = new TextEncoder();
-    const passwordBuffer = encoder.encode(passphrase);
-    
-    // A static salt lets multiple devices derive the exact same key from the same passphrase
-    const salt = encoder.encode("MemStore_ZeroKnowledge_Salt_2026"); 
-
-    const baseKey = await crypto.subtle.importKey(
-        "raw", passwordBuffer, "PBKDF2", false, ["deriveKey"]
-    );
-
-    return crypto.subtle.deriveKey(
-        {
-            name: "PBKDF2",
-            salt: salt,
-            iterations: 100000,
-            hash: "SHA-256"
-        },
-        baseKey,
-        { name: "AES-GCM", length: 256 },
-        false,
-        ["encrypt", "decrypt"]
-    );
-}
-
-// Encrypt object into an object containing Base64 strings suitable for Firestore
-async function encryptData(obj, passphrase) {
-    const key = await deriveKey(passphrase);
-    const iv = crypto.getRandomValues(new Uint8Array(12)); // 96-bit Initialization Vector
-    const plainText = stringToBuffer(JSON.stringify(obj));
-
-    const cipherBuffer = await crypto.subtle.encrypt(
-        { name: "AES-GCM", iv: iv },
-        key,
-        plainText
-    );
-
-    return {
-        ciphertext: bufferToBase64(cipherBuffer),
-        iv: bufferToBase64(iv)
-    };
-}
-
-// Decrypt text back into an object
-async function decryptData(encryptedContainer, passphrase) {
-    try {
-        const key = await deriveKey(passphrase);
-        const iv = base64ToBuffer(encryptedContainer.iv);
-        const cipherBuffer = base64ToBuffer(encryptedContainer.ciphertext);
-
-        const decryptedBuffer = await crypto.subtle.decrypt(
-            { name: "AES-GCM", iv: iv },
-            key,
-            cipherBuffer
-        );
-
-        return JSON.parse(bufferToString(decryptedBuffer));
-    } catch (e) {
-        throw new Error("Decryption failed. Incorrect passphrase.");
-    }
-}
-async function saveMemoriesToCloud() {
-    const user = auth.currentUser;
-    const passphrase = sessionStorage.getItem('memSyncPassphrase'); 
-    if (!user || !memData || !passphrase) return; 
-
-    try {
-        // Encrypt payloads on-the-fly
-        const encryptedVault = await encryptData(memData, passphrase);
-        const encryptedArchives = await encryptData(archives, passphrase);
-
-        await db.collection("users").doc(user.uid).set({
-            vault: encryptedVault,
-            archives: encryptedArchives,
-            lastSynced: new Date().toISOString()
-        });
-        console.log("Encrypted memories secured in the cloud!");
-    } catch (e) {
-        console.error("Cloud Save Error", e);
-    }
-}
-
-function shareMemory() {
+        function shareMemory() {
             const date = document.getElementById('readerDate').innerText;
             const entry = document.getElementById('readerEntry').innerText;
             const shareText = `A memory from ${date}:\n\n"${entry}"\n\n— Logged via MemStore`;
-            
             if (navigator.share) {
-                navigator.share({
-                    title: 'MemStore Memory',
-                    text: shareText
-                }).catch(err => console.log('Share canceled', err));
+                navigator.share({ title: 'MemStore Memory', text: shareText }).catch(err => console.log('Share canceled', err));
             } else {
                 navigator.clipboard.writeText(shareText);
                 alert("Memory copied to clipboard!");
@@ -1433,7 +1307,6 @@ function shareMemory() {
         function playUISound(type) {
             if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             const now = audioCtx.currentTime;
-            
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             osc.type = 'sine'; 
@@ -1444,15 +1317,13 @@ function shareMemory() {
                 gain.gain.setValueAtTime(0.04, now); 
                 gain.gain.exponentialRampToValueAtTime(0.001, now + 0.03);
                 osc.start(now); osc.stop(now + 0.03);
-            } 
-            else if (type === 'pop') {
+            } else if (type === 'pop') {
                 osc.frequency.setValueAtTime(450, now);
                 osc.frequency.exponentialRampToValueAtTime(300, now + 0.06);
                 gain.gain.setValueAtTime(0.08, now); 
                 gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
                 osc.start(now); osc.stop(now + 0.06);
-            }
-            else if (type === 'swell') {
+            } else if (type === 'swell') {
                 osc.frequency.setValueAtTime(300, now);
                 osc.frequency.exponentialRampToValueAtTime(500, now + 0.1);
                 gain.gain.setValueAtTime(0, now);
@@ -1460,7 +1331,6 @@ function shareMemory() {
                 gain.gain.linearRampToValueAtTime(0, now + 0.1);
                 osc.start(now); osc.stop(now + 0.1);
             }
-
             osc.connect(gain);
             gain.connect(audioCtx.destination);
         }
@@ -1470,236 +1340,216 @@ function shareMemory() {
             const isPrimaryBtn = e.target.closest('.primary-btn');
             const isStandardBtn = e.target.closest('button') && !isPrimaryBtn;
 
-            if (isGridBox) {
-                playUISound('tick');
-            } else if (isPrimaryBtn) {
-                playUISound('swell');
-            } else if (isStandardBtn) {
-                playUISound('pop');
-            }
+            if (isGridBox) playUISound('tick');
+            else if (isPrimaryBtn) playUISound('swell');
+            else if (isStandardBtn) playUISound('pop');
         });
-// Register the Service Worker for PWA
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js')
-            .then(reg => console.log('Service Worker registered', reg))
-            .catch(err => console.log('Service Worker registration failed', err));
-    });
-}
-// --- BACKUP & RESTORE SYSTEM ---
 
-async function exportBackup() {
-    try {
-        // Fetch current active vault and archives
-        const activeVaultData = await loadFromDB('activeVault');
-        const archivesData = await loadFromDB('archives') || [];
-        
-        // Package them into a single object
-        const backupData = { 
-            activeVault: activeVaultData, 
-            archives: archivesData, 
-            exportDate: new Date().toISOString() 
-        };
-        
-        // Create a downloadable JSON file
-        const blob = new Blob([JSON.stringify(backupData)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `MemStore_Backup_${getDateKey()}.json`;
-        document.body.appendChild(a);
-        a.click();
-        
-        // Cleanup
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-    } catch (error) {
-        alert("Failed to export backup. Ensure you have an active vault.");
-    }
-}
-// --- FIREBASE CLOUD SYNC SYSTEM ---
-
-// 1. Listen for auth state changes so the button stays updated on page reload
-auth.onAuthStateChanged(user => {
-    const syncBtn = document.getElementById('btnGoogleSync');
-    if (user) {
-        // Change the text to show the user and the logout option
-        syncBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg> Logged in as ${user.displayName} (Click to Logout)`;
-        syncBtn.style.borderColor = "#4ade80"; 
-        syncBtn.style.color = "#4ade80";
-        
-        // Change the button's function to logout when clicked
-        syncBtn.onclick = handleSignOut;
-        startSync(user);
-    } else {
-        syncBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg> Sign in (to access your memories remotely!)`;
-        syncBtn.style.borderColor = "rgba(255,255,255,0.1)";
-        syncBtn.style.color = "var(--text)";
-        
-        // Change the button's function back to sign in
-        syncBtn.onclick = handleAuthClick;
-    }
-});
-function handleSignOut() {
-    if (confirm("Do you want to log out of MemStore?")) {
-        auth.signOut().then(() => {
-            console.log("User signed out.");
-            // Optional: You can choose to reload the page to clear the local session
-            // location.reload();
-        }).catch((error) => {
-            console.error("Sign out error", error);
-        });
-    }
-}
-// 2. Handle the Sign-In button click
-// 2. Handle the Sign-In button click
-function handleAuthClick() {
-    if (auth.currentUser) {
-        alert(`You are already connected as ${auth.currentUser.displayName}!`);
-        return;
-    }
-    
-    const provider = new firebase.auth.GoogleAuthProvider();
-    auth.signInWithPopup(provider).then((result) => {
-        
-        // NEW: Ask for the sync passphrase immediately after logging in
-        const passphrase = prompt("Enter your secure Sync Passphrase. (If this is your first time, create one now. You will need this on all devices to decrypt your memories):");
-        
-        if (passphrase) {
-            sessionStorage.setItem('memSyncPassphrase', passphrase);
-            // Automatically try to pull data if they just signed in
-            loadMemoriesFromCloud(false); 
-        } else {
-            alert("Sync disabled: A passphrase is required for Zero-Knowledge encryption.");
-            auth.signOut(); // Kick them out if they refuse to set a passphrase
+        // Register the Service Worker for PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js').catch(err => console.log('Service Worker registration failed', err));
+            });
         }
 
-    }).catch((error) => {
-        console.error("Auth error", error);
-        alert("Sign in failed. Please try again.");
-    });
-}
- 
-// 4. Load from Firestore (Linked to your "Pull from Cloud" button)
-// 4. Load from Firestore (Linked to your "Pull from Cloud" button)
-async function loadMemoriesFromCloud(showAlertIfEmpty = true) {
-    const user = auth.currentUser;
-    const passphrase = sessionStorage.getItem('memSyncPassphrase');
-
-    if (!user) {
-        alert("Please sign in first to pull your memories from the cloud.");
-        return;
-    }
-    if (!passphrase) {
-        alert("Missing encryption passphrase. Please log out and log back in.");
-        return;
-    }
-
-    try {
-        const doc = await db.collection("users").doc(user.uid).get();
-        if (doc.exists) {
-            const cloudData = doc.data();
-            if (confirm("Found encrypted memories in the cloud! Do you want to overwrite your local device memories with the cloud version?")) {
-                
-                try {
-                    // Decrypt the cloud data
-                    memData = await decryptData(cloudData.vault, passphrase);
-                    archives = await decryptData(cloudData.archives, passphrase) || [];
-                    
-                    await saveToDB('activeVault', memData);
-                    await saveToDB('archives', archives);
-                    alert("Memories decrypted and restored! Reloading...");
-                    location.reload(); 
-                } catch (decryptionError) {
-                    alert("Decryption Failed! The passphrase you entered does not match the one used to encrypt this cloud backup.");
-                    console.error(decryptionError);
-                }
-            }
-        } else {
-            if (showAlertIfEmpty) {
-                alert("No backup found in the cloud yet. Seal an entry to automatically back it up!");
-            }
-            // If they just signed in and have no cloud data, push their local data up (encrypted)
-            saveMemoriesToCloud();
-        }
-    } catch (e) {
-        console.error("Cloud Load Error", e);
-        alert("Failed to connect to the cloud.");
-    }
-}
-// Function to pull data from cloud (Add this if you want a 'Restore' button too)
-function importBackup(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    if (!confirm("Warning: Restoring a backup will overwrite your current vault. Do you want to proceed?")) {
-        event.target.value = ''; // Reset input
-        return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-        try {
-            const data = JSON.parse(e.target.result);
-            
-            // Validate it's a MemStore backup file
-            if (data.activeVault !== undefined && data.archives !== undefined) {
-                // Restore to IndexedDB
-                await saveToDB('activeVault', data.activeVault);
-                await saveToDB('archives', data.archives);
-                
-                alert('Backup restored successfully! The timeline will now refresh.');
-                location.reload(); // Refresh the page to load the restored state
-            } else {
-                alert('Invalid backup file format. Are you sure this is a MemStore backup?');
-            }
-        } catch (err) {
-            alert('Error reading the backup file. It might be corrupted.');
-        }
-    };
-    reader.readAsText(file);
-}
-        // --- DYNAMIC SYNC ENGINE ---
-// --- DYNAMIC SYNC ENGINE ---
-function startSync(user) {
-    console.log("Sync Engine: Online");
-    
-    db.collection("users").doc(user.uid).onSnapshot(async (doc) => {
-        const passphrase = sessionStorage.getItem('memSyncPassphrase');
-        if (doc.exists && passphrase) {
-            const incomingData = doc.data();
-            
+        // --- BACKUP & RESTORE SYSTEM (Local Plaintext) ---
+        async function exportBackup() {
             try {
-                // Decrypt cloud data before using it locally
-                const decryptedVault = await decryptData(incomingData.vault, passphrase);
-                const decryptedArchives = await decryptData(incomingData.archives, passphrase);
-                
-                // Only update if the decrypted cloud version is different
-                if (JSON.stringify(decryptedVault) !== JSON.stringify(memData)) {
-                    console.log("Vibe Check: New encrypted memories detected and decrypted!");
-                    
-                    memData = decryptedVault;
-                    archives = decryptedArchives || [];
-                    
-                    await saveToDB('activeVault', memData);
-                    await saveToDB('archives', archives);
-                    
-                    if (document.getElementById('screen-main').classList.contains('active')) {
-                        renderApp(); 
-                    }
-                    
-                    const status = document.getElementById('saveStatus');
-                    if (status) {
-                        status.innerText = "Synced & Decrypted from Cloud";
-                        setTimeout(() => status.innerText = "", 2000);
-                    }
-                }
-            } catch (err) {
-                console.error("Sync Engine: Decryption failed (bad passphrase or corrupt data).", err);
+                const activeVaultData = await loadFromDB('activeVault');
+                const archivesData = await loadFromDB('archives') || [];
+                const backupData = { activeVault: activeVaultData, archives: archivesData, exportDate: new Date().toISOString() };
+                const blob = new Blob([JSON.stringify(backupData)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `MemStore_Backup_${getDateKey()}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            } catch (error) {
+                alert("Failed to export backup. Ensure you have an active vault.");
             }
         }
-    });
-}      
+
+        function importBackup(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            if (!confirm("Warning: Restoring a backup will overwrite your current vault. Do you want to proceed?")) {
+                event.target.value = ''; 
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (data.activeVault !== undefined && data.archives !== undefined) {
+                        await saveToDB('activeVault', data.activeVault);
+                        await saveToDB('archives', data.archives);
+                        alert('Backup restored successfully! The timeline will now refresh.');
+                        location.reload(); 
+                    } else {
+                        alert('Invalid backup file format. Are you sure this is a MemStore backup?');
+                    }
+                } catch (err) {
+                    alert('Error reading the backup file. It might be corrupted.');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // --- END-TO-END ENCRYPTION ENGINE (Web Crypto API) ---
+        function stringToBuffer(str) { return new TextEncoder().encode(str); }
+        function bufferToString(buf) { return new TextDecoder().decode(buf); }
+        function bufferToBase64(buf) { return btoa(String.fromCharCode(...new Uint8Array(buf))); }
+        function base64ToBuffer(base64) { return Uint8Array.from(atob(base64), c => c.charCodeAt(0)).buffer; }
+
+        async function deriveKey(passphrase) {
+            const encoder = new TextEncoder();
+            const passwordBuffer = encoder.encode(passphrase);
+            const salt = encoder.encode("MemStore_ZeroKnowledge_Salt_2026"); 
+            const baseKey = await crypto.subtle.importKey("raw", passwordBuffer, "PBKDF2", false, ["deriveKey"]);
+            return crypto.subtle.deriveKey(
+                { name: "PBKDF2", salt: salt, iterations: 100000, hash: "SHA-256" },
+                baseKey, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]
+            );
+        }
+
+        async function encryptData(obj, passphrase) {
+            const key = await deriveKey(passphrase);
+            const iv = crypto.getRandomValues(new Uint8Array(12)); 
+            const plainText = stringToBuffer(JSON.stringify(obj));
+            const cipherBuffer = await crypto.subtle.encrypt({ name: "AES-GCM", iv: iv }, key, plainText);
+            return { ciphertext: bufferToBase64(cipherBuffer), iv: bufferToBase64(iv) };
+        }
+
+        async function decryptData(encryptedContainer, passphrase) {
+            try {
+                const key = await deriveKey(passphrase);
+                const iv = base64ToBuffer(encryptedContainer.iv);
+                const cipherBuffer = base64ToBuffer(encryptedContainer.ciphertext);
+                const decryptedBuffer = await crypto.subtle.decrypt({ name: "AES-GCM", iv: iv }, key, cipherBuffer);
+                return JSON.parse(bufferToString(decryptedBuffer));
+            } catch (e) {
+                throw new Error("Decryption failed. Incorrect passphrase.");
+            }
+        }
+
+        // --- FIREBASE CLOUD SYNC SYSTEM (E2EE) ---
+        auth.onAuthStateChanged(user => {
+            const syncBtn = document.getElementById('btnGoogleSync');
+            if (user) {
+                syncBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg> Logged in as ${user.displayName} (Click to Logout)`;
+                syncBtn.style.borderColor = "#4ade80"; 
+                syncBtn.style.color = "#4ade80";
+                syncBtn.onclick = handleSignOut;
+                startSync(user);
+            } else {
+                syncBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg> Sign in (to access your memories remotely!)`;
+                syncBtn.style.borderColor = "rgba(255,255,255,0.1)";
+                syncBtn.style.color = "var(--text)";
+                syncBtn.onclick = handleAuthClick;
+            }
+        });
+
+        function handleSignOut() {
+            if (confirm("Do you want to log out of MemStore?")) {
+                auth.signOut().then(() => console.log("User signed out."));
+            }
+        }
+
+        function handleAuthClick() {
+            if (auth.currentUser) return alert(`You are already connected as ${auth.currentUser.displayName}!`);
+            const provider = new firebase.auth.GoogleAuthProvider();
+            auth.signInWithPopup(provider).then((result) => {
+                const passphrase = prompt("Enter your secure Sync Passphrase. (If this is your first time, create one now. You will need this on all devices to decrypt your memories):");
+                if (passphrase) {
+                    sessionStorage.setItem('memSyncPassphrase', passphrase);
+                    loadMemoriesFromCloud(false); 
+                } else {
+                    alert("Sync disabled: A passphrase is required for Zero-Knowledge encryption.");
+                    auth.signOut(); 
+                }
+            }).catch((error) => alert("Sign in failed. Please try again."));
+        }
+
+        async function saveMemoriesToCloud() {
+            const user = auth.currentUser;
+            const passphrase = sessionStorage.getItem('memSyncPassphrase'); 
+            if (!user || !memData || !passphrase) return; 
+            try {
+                const encryptedVault = await encryptData(memData, passphrase);
+                const encryptedArchives = await encryptData(archives, passphrase);
+                await db.collection("users").doc(user.uid).set({
+                    vault: encryptedVault, archives: encryptedArchives, lastSynced: new Date().toISOString()
+                });
+                console.log("Encrypted memories secured in the cloud!");
+            } catch (e) {
+                console.error("Cloud Save Error", e);
+            }
+        }
+
+        async function loadMemoriesFromCloud(showAlertIfEmpty = true) {
+            const user = auth.currentUser;
+            const passphrase = sessionStorage.getItem('memSyncPassphrase');
+            if (!user) return alert("Please sign in first to pull your memories from the cloud.");
+            if (!passphrase) return alert("Missing encryption passphrase. Please log out and log back in.");
+
+            try {
+                const doc = await db.collection("users").doc(user.uid).get();
+                if (doc.exists) {
+                    const cloudData = doc.data();
+                    if (confirm("Found encrypted memories in the cloud! Do you want to overwrite your local device memories with the cloud version?")) {
+                        try {
+                            memData = await decryptData(cloudData.vault, passphrase);
+                            archives = await decryptData(cloudData.archives, passphrase) || [];
+                            await saveToDB('activeVault', memData);
+                            await saveToDB('archives', archives);
+                            alert("Memories decrypted and restored! Reloading...");
+                            location.reload(); 
+                        } catch (decryptionError) {
+                            alert("Decryption Failed! The passphrase you entered does not match the one used to encrypt this cloud backup.");
+                        }
+                    }
+                } else {
+                    if (showAlertIfEmpty) alert("No backup found in the cloud yet. Seal an entry to automatically back it up!");
+                    saveMemoriesToCloud();
+                }
+            } catch (e) {
+                alert("Failed to connect to the cloud.");
+            }
+        }
+
+        function startSync(user) {
+            console.log("Sync Engine: Online");
+            db.collection("users").doc(user.uid).onSnapshot(async (doc) => {
+                const passphrase = sessionStorage.getItem('memSyncPassphrase');
+                if (doc.exists && passphrase) {
+                    const incomingData = doc.data();
+                    try {
+                        const decryptedVault = await decryptData(incomingData.vault, passphrase);
+                        const decryptedArchives = await decryptData(incomingData.archives, passphrase);
+                        if (JSON.stringify(decryptedVault) !== JSON.stringify(memData)) {
+                            console.log("Vibe Check: New encrypted memories detected and decrypted!");
+                            memData = decryptedVault;
+                            archives = decryptedArchives || [];
+                            await saveToDB('activeVault', memData);
+                            await saveToDB('archives', archives);
+                            if (document.getElementById('screen-main').classList.contains('active')) renderApp(); 
+                            const status = document.getElementById('saveStatus');
+                            if (status) {
+                                status.innerText = "Synced & Decrypted from Cloud";
+                                setTimeout(() => status.innerText = "", 2000);
+                            }
+                        }
+                    } catch (err) {
+                        console.error("Sync Engine: Decryption failed (bad passphrase or corrupt data).", err);
+                    }
+                }
+            });
+        }
+        
+        window.onload = bootApp;
     </script>
 <footer style="margin-top: auto; padding: 40px 0 20px 0; text-align: center; opacity: 0.4; font-size: 0.8rem; letter-spacing: 0.5px;">
     <p style="margin: 0;">© 2026 Jenish</p>
