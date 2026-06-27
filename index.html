@@ -1323,8 +1323,97 @@ function triggerWarpSequence(capsule) {
                 alert("App link copied to clipboard!");
             }
         }
+// --- END-TO-END ENCRYPTION ENGINE (Web Crypto API) ---
 
-        function shareMemory() {
+function stringToBuffer(str) { return new TextEncoder().encode(str); }
+function bufferToString(buf) { return new TextDecoder().decode(buf); }
+function bufferToBase64(buf) { return btoa(String.fromCharCode(...new Uint8Array(buf))); }
+function base64ToBuffer(base64) { return Uint8Array.from(atob(base64), c => c.charCodeAt(0)).buffer; }
+
+// Derive an AES-GCM key from a user passphrase and a deterministic salt
+async function deriveKey(passphrase) {
+    const encoder = new TextEncoder();
+    const passwordBuffer = encoder.encode(passphrase);
+    
+    // A static salt lets multiple devices derive the exact same key from the same passphrase
+    const salt = encoder.encode("MemStore_ZeroKnowledge_Salt_2026"); 
+
+    const baseKey = await crypto.subtle.importKey(
+        "raw", passwordBuffer, "PBKDF2", false, ["deriveKey"]
+    );
+
+    return crypto.subtle.deriveKey(
+        {
+            name: "PBKDF2",
+            salt: salt,
+            iterations: 100000,
+            hash: "SHA-256"
+        },
+        baseKey,
+        { name: "AES-GCM", length: 256 },
+        false,
+        ["encrypt", "decrypt"]
+    );
+}
+
+// Encrypt object into an object containing Base64 strings suitable for Firestore
+async function encryptData(obj, passphrase) {
+    const key = await deriveKey(passphrase);
+    const iv = crypto.getRandomValues(new Uint8Array(12)); // 96-bit Initialization Vector
+    const plainText = stringToBuffer(JSON.stringify(obj));
+
+    const cipherBuffer = await crypto.subtle.encrypt(
+        { name: "AES-GCM", iv: iv },
+        key,
+        plainText
+    );
+
+    return {
+        ciphertext: bufferToBase64(cipherBuffer),
+        iv: bufferToBase64(iv)
+    };
+}
+
+// Decrypt text back into an object
+async function decryptData(encryptedContainer, passphrase) {
+    try {
+        const key = await deriveKey(passphrase);
+        const iv = base64ToBuffer(encryptedContainer.iv);
+        const cipherBuffer = base64ToBuffer(encryptedContainer.ciphertext);
+
+        const decryptedBuffer = await crypto.subtle.decrypt(
+            { name: "AES-GCM", iv: iv },
+            key,
+            cipherBuffer
+        );
+
+        return JSON.parse(bufferToString(decryptedBuffer));
+    } catch (e) {
+        throw new Error("Decryption failed. Incorrect passphrase.");
+    }
+}
+async function saveMemoriesToCloud() {
+    const user = auth.currentUser;
+    const passphrase = sessionStorage.getItem('memSyncPassphrase'); 
+    if (!user || !memData || !passphrase) return; 
+
+    try {
+        // Encrypt payloads on-the-fly
+        const encryptedVault = await encryptData(memData, passphrase);
+        const encryptedArchives = await encryptData(archives, passphrase);
+
+        await db.collection("users").doc(user.uid).set({
+            vault: encryptedVault,
+            archives: encryptedArchives,
+            lastSynced: new Date().toISOString()
+        });
+        console.log("Encrypted memories secured in the cloud!");
+    } catch (e) {
+        console.error("Cloud Save Error", e);
+    }
+}
+
+function shareMemory() {
             const date = document.getElementById('readerDate').innerText;
             const entry = document.getElementById('readerEntry').innerText;
             const shareText = `A memory from ${date}:\n\n"${entry}"\n\n— Logged via MemStore`;
@@ -1463,6 +1552,7 @@ function handleSignOut() {
     }
 }
 // 2. Handle the Sign-In button click
+// 2. Handle the Sign-In button click
 function handleAuthClick() {
     if (auth.currentUser) {
         alert(`You are already connected as ${auth.currentUser.displayName}!`);
@@ -1471,36 +1561,37 @@ function handleAuthClick() {
     
     const provider = new firebase.auth.GoogleAuthProvider();
     auth.signInWithPopup(provider).then((result) => {
-        // Automatically try to pull data if they just signed in
-        loadMemoriesFromCloud(false); 
+        
+        // NEW: Ask for the sync passphrase immediately after logging in
+        const passphrase = prompt("Enter your secure Sync Passphrase. (If this is your first time, create one now. You will need this on all devices to decrypt your memories):");
+        
+        if (passphrase) {
+            sessionStorage.setItem('memSyncPassphrase', passphrase);
+            // Automatically try to pull data if they just signed in
+            loadMemoriesFromCloud(false); 
+        } else {
+            alert("Sync disabled: A passphrase is required for Zero-Knowledge encryption.");
+            auth.signOut(); // Kick them out if they refuse to set a passphrase
+        }
+
     }).catch((error) => {
         console.error("Auth error", error);
         alert("Sign in failed. Please try again.");
     });
 }
-
-// 3. Save to Firestore (Called automatically when you seal an entry)
-async function saveMemoriesToCloud() {
-    const user = auth.currentUser;
-    if (!user || !memData) return; // Silently abort if not logged in or no data
-
-    try {
-        await db.collection("users").doc(user.uid).set({
-            vault: memData,
-            archives: archives,
-            lastSynced: new Date().toISOString()
-        });
-        console.log("Memories secured in the cloud!");
-    } catch (e) {
-        console.error("Cloud Save Error", e);
-    }
-}
-
+ 
+// 4. Load from Firestore (Linked to your "Pull from Cloud" button)
 // 4. Load from Firestore (Linked to your "Pull from Cloud" button)
 async function loadMemoriesFromCloud(showAlertIfEmpty = true) {
     const user = auth.currentUser;
+    const passphrase = sessionStorage.getItem('memSyncPassphrase');
+
     if (!user) {
         alert("Please sign in first to pull your memories from the cloud.");
+        return;
+    }
+    if (!passphrase) {
+        alert("Missing encryption passphrase. Please log out and log back in.");
         return;
     }
 
@@ -1508,19 +1599,27 @@ async function loadMemoriesFromCloud(showAlertIfEmpty = true) {
         const doc = await db.collection("users").doc(user.uid).get();
         if (doc.exists) {
             const cloudData = doc.data();
-            if (confirm("Found your memories in the cloud! Do you want to overwrite your local device memories with the cloud version?")) {
-                memData = cloudData.vault;
-                archives = cloudData.archives || [];
-                await saveToDB('activeVault', memData);
-                await saveToDB('archives', archives);
-                alert("Memories restored! Reloading...");
-                location.reload(); 
+            if (confirm("Found encrypted memories in the cloud! Do you want to overwrite your local device memories with the cloud version?")) {
+                
+                try {
+                    // Decrypt the cloud data
+                    memData = await decryptData(cloudData.vault, passphrase);
+                    archives = await decryptData(cloudData.archives, passphrase) || [];
+                    
+                    await saveToDB('activeVault', memData);
+                    await saveToDB('archives', archives);
+                    alert("Memories decrypted and restored! Reloading...");
+                    location.reload(); 
+                } catch (decryptionError) {
+                    alert("Decryption Failed! The passphrase you entered does not match the one used to encrypt this cloud backup.");
+                    console.error(decryptionError);
+                }
             }
         } else {
             if (showAlertIfEmpty) {
                 alert("No backup found in the cloud yet. Seal an entry to automatically back it up!");
             }
-            // If they just signed in and have no cloud data, let's push their local data up
+            // If they just signed in and have no cloud data, push their local data up (encrypted)
             saveMemoriesToCloud();
         }
     } catch (e) {
@@ -1561,79 +1660,46 @@ function importBackup(event) {
     reader.readAsText(file);
 }
         // --- DYNAMIC SYNC ENGINE ---
+// --- DYNAMIC SYNC ENGINE ---
 function startSync(user) {
     console.log("Sync Engine: Online");
     
-    // Create a listener on your specific user document
-    db.collection("users").doc(user.uid).onSnapshot((doc) => {
-        if (doc.exists) {
+    db.collection("users").doc(user.uid).onSnapshot(async (doc) => {
+        const passphrase = sessionStorage.getItem('memSyncPassphrase');
+        if (doc.exists && passphrase) {
             const incomingData = doc.data();
             
-            // Safety check: only update if the cloud version is different
-            if (JSON.stringify(incomingData.vault) !== JSON.stringify(memData)) {
-                console.log("Vibe Check: New memories detected on another device!");
+            try {
+                // Decrypt cloud data before using it locally
+                const decryptedVault = await decryptData(incomingData.vault, passphrase);
+                const decryptedArchives = await decryptData(incomingData.archives, passphrase);
                 
-                // 1. Update the local variables
-                memData = incomingData.vault;
-                archives = incomingData.archives || [];
-                
-                // 2. Persist it to IndexedDB so it survives a refresh
-                saveToDB('activeVault', memData);
-                saveToDB('archives', archives);
-                
-                // 3. RE-RENDER the UI (This is the missing link)
-                // If you are on the main screen, this will instantly show the new filled block
-                if (document.getElementById('screen-main').classList.contains('active')) {
-                    renderApp(); 
+                // Only update if the decrypted cloud version is different
+                if (JSON.stringify(decryptedVault) !== JSON.stringify(memData)) {
+                    console.log("Vibe Check: New encrypted memories detected and decrypted!");
+                    
+                    memData = decryptedVault;
+                    archives = decryptedArchives || [];
+                    
+                    await saveToDB('activeVault', memData);
+                    await saveToDB('archives', archives);
+                    
+                    if (document.getElementById('screen-main').classList.contains('active')) {
+                        renderApp(); 
+                    }
+                    
+                    const status = document.getElementById('saveStatus');
+                    if (status) {
+                        status.innerText = "Synced & Decrypted from Cloud";
+                        setTimeout(() => status.innerText = "", 2000);
+                    }
                 }
-                
-                // Update the save status so you know it happened
-                const status = document.getElementById('saveStatus');
-                if (status) {
-                    status.innerText = "Synced from Cloud";
-                    setTimeout(() => status.innerText = "", 2000);
-                }
+            } catch (err) {
+                console.error("Sync Engine: Decryption failed (bad passphrase or corrupt data).", err);
             }
         }
-    }, (error) => {
-        console.error("Sync Engine Error:", error);
     });
-}
-window.onload = bootApp;
-        self.addEventListener('install', (event) => {
-  // Forces the waiting service worker to become the active service worker
-  self.skipWaiting();
-});
-        // --- NEW: REAL-TIME SYNC LISTENER ---
-function setupRealTimeSync(user) {
-    // Listen for any changes in your Firebase document
-    db.collection("users").doc(user.uid).onSnapshot(async (doc) => {
-        if (doc.exists) {
-            const cloudData = doc.data();
-            
-            // Only update if the cloud data is different/newer than local data
-            // We compare the IDs or timestamps to prevent infinite reload loops
-            if (JSON.stringify(cloudData.vault) !== JSON.stringify(memData)) {
-                console.log("Cloud update detected! Syncing memories...");
-                
-                memData = cloudData.vault;
-                archives = cloudData.archives || [];
-                
-                // Save the new data to your local device storage (IndexedDB)
-                await saveToDB('activeVault', memData);
-                await saveToDB('archives', archives);
-                
-                // Refresh the UI so the new "One Good Thing" appears
-                renderApp(); 
-                
-                // Optional: Show a subtle notification or just let it update 'vibe' style
-                document.getElementById('saveStatus').innerText = "Synced from cloud";
-            }
-        }
-    }, (error) => {
-        console.error("Sync error:", error);
-    });
-}
+}      
     </script>
 <footer style="margin-top: auto; padding: 40px 0 20px 0; text-align: center; opacity: 0.4; font-size: 0.8rem; letter-spacing: 0.5px;">
     <p style="margin: 0;">© 2026 Jenish</p>
