@@ -1442,7 +1442,7 @@ display: none;
             let passphrase = sessionStorage.getItem('memSyncPassphrase');
             if (passphrase) return passphrase;
 
-            passphrase = prompt("Enter your secure Sync Passphrase. Use the same one on every device to decrypt your memories:");
+            passphrase = prompt("Enter a cloud sync key. Use the same key on each device:");
             if (!passphrase) return null;
 
             sessionStorage.setItem('memSyncPassphrase', passphrase);
@@ -1460,7 +1460,7 @@ display: none;
         function enableCloudSync(user, pullFromCloud = false) {
             const passphrase = getSyncPassphrase();
             if (!passphrase) {
-                alert("Sync disabled: A passphrase is required for Zero-Knowledge encryption.");
+                console.log("Encrypted cloud sync skipped: no sync key entered.");
                 auth.signOut();
                 return;
             }
@@ -1525,7 +1525,7 @@ display: none;
             const user = auth.currentUser;
             const passphrase = getSyncPassphrase();
             if (!user) return alert("Please sign in first to pull your memories from the cloud.");
-            if (!passphrase) return alert("Missing encryption passphrase.");
+            if (!passphrase) return;
 
             try {
                 const doc = await db.collection("users").doc(user.uid).get();
