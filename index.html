@@ -1502,12 +1502,6 @@ display: none;
                 enableCloudSync(result.user, true);
             }).catch((error) => alert("Sign in failed. Please try again."));
         }
-
-            const provider = new firebase.auth.GoogleAuthProvider();
-            auth.signInWithPopup(provider).then((result) => {
-                enableCloudSync(result.user, true);
-            }).catch((error) => alert("Sign in failed. Please try again."));
-        }
         async function saveMemoriesToCloud() {
             const user = auth.currentUser;
             if (!user || !memData) return;
