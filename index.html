@@ -1483,21 +1483,31 @@ display: none;
                 syncBtn.onclick = handleAuthClick;
             }
         });
-
-        function handleSignOut() {
+	async function handleSignOut() {
             if (confirm("Do you want to log out of MemStore?")) {
+                // Automatically download a backup before wiping the active cloud connection
+                await exportBackup();
                 auth.signOut().then(() => console.log("User signed out."));
             }
         }
 
-        function handleAuthClick() {
+        async function handleAuthClick() {
             if (auth.currentUser) return alert(`You are already connected as ${auth.currentUser.displayName}!`);
+            
+            // Automatically download a backup of local data before connecting to the cloud
+            await exportBackup();
+
             const provider = new firebase.auth.GoogleAuthProvider();
             auth.signInWithPopup(provider).then((result) => {
                 enableCloudSync(result.user, true);
             }).catch((error) => alert("Sign in failed. Please try again."));
         }
 
+            const provider = new firebase.auth.GoogleAuthProvider();
+            auth.signInWithPopup(provider).then((result) => {
+                enableCloudSync(result.user, true);
+            }).catch((error) => alert("Sign in failed. Please try again."));
+        }
         async function saveMemoriesToCloud() {
             const user = auth.currentUser;
             if (!user || !memData) return;
@@ -1544,7 +1554,7 @@ display: none;
             }
         }
 
-        function startSync(user) {
+      function startSync(user) {
             console.log("Sync Engine: Online");
             if (cloudSyncUnsubscribe) cloudSyncUnsubscribe();
             cloudSyncUnsubscribe = db.collection("users").doc(user.uid).onSnapshot(async (doc) => {
@@ -1555,12 +1565,27 @@ display: none;
                         const restored = await readCloudData(incomingData, user);
                         const decryptedVault = restored.vault;
                         const decryptedArchives = restored.archives;
+
                         if (JSON.stringify(decryptedVault) !== JSON.stringify(memData)) {
+                            
+                            // --- NEW CONFLICT RESOLUTION LOGIC ---
+                            const localCount = (memData && memData.entries) ? Object.keys(memData.entries).length : 0;
+                            const cloudCount = (decryptedVault && decryptedVault.entries) ? Object.keys(decryptedVault.entries).length : 0;
+                            
+                            // Prevent overwrite if cloud has fewer entries for the same active vault ID
+                            if (memData && decryptedVault.id === memData.id && cloudCount < localCount) {
+                                console.warn("Ignored cloud update: Local device has more entries. Pushing local to cloud instead.");
+                                saveMemoriesToCloud(); 
+                                return; // Stop the overwrite
+                            }
+                            // -------------------------------------
+
                             console.log("Vibe Check: New encrypted memories detected and decrypted!");
                             memData = decryptedVault;
                             archives = decryptedArchives || [];
                             await saveToDB('activeVault', memData);
                             await saveToDB('archives', archives);
+                            
                             if (document.getElementById('screen-main').classList.contains('active')) renderApp(); 
                             const status = document.getElementById('saveStatus');
                             if (status) {
@@ -1573,8 +1598,7 @@ display: none;
                     }
                 }
             });
-        }
-        
+        }        
         window.onload = bootApp;
     </script>
 <footer style="margin-top: auto; padding: 40px 0 20px 0; text-align: center; opacity: 0.4; font-size: 0.8rem; letter-spacing: 0.5px;">
