@@ -1,10 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics-compat.js"></script>
+<!-- Firebase is loaded lazily via loadFirebaseSDK() further down, so the app
+     never blocks on it - cloud sync is optional, the journal itself is fully local. -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#020617">
@@ -457,6 +455,40 @@ display: none;
     background: rgba(239, 68, 68, 0.15); 
     border-color: #ef4444; 
 }
+
+/* --- App Lock --- */
+.lock-toggle-row {
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--card); padding: 16px 18px; border-radius: 14px;
+    border: 1px solid rgba(255,255,255,0.1); margin-bottom: 12px;
+}
+.lock-toggle-label { text-align: left; }
+.lock-toggle-title { font-weight: 600; font-size: 0.98rem; }
+.lock-toggle-sub { font-size: 0.8rem; color: var(--muted); margin-top: 2px; }
+.switch { position: relative; display: inline-block; width: 46px; height: 26px; flex-shrink: 0; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.switch-slider {
+    position: absolute; cursor: pointer; inset: 0; background: rgba(255,255,255,0.15);
+    transition: 0.2s; border-radius: 34px;
+}
+.switch-slider:before {
+    position: absolute; content: ""; height: 20px; width: 20px; left: 3px; bottom: 3px;
+    background: white; transition: 0.2s; border-radius: 50%;
+}
+.switch input:checked + .switch-slider { background: var(--accent); }
+.switch input:checked + .switch-slider:before { transform: translateX(20px); }
+
+#lockScreen {
+    position: fixed; inset: 0; background: var(--bg); z-index: 1000;
+    display: none; flex-direction: column; align-items: center; justify-content: center;
+    padding: 20px; text-align: center;
+}
+#lockScreen.active { display: flex; }
+.lock-hero-icon {
+    width: 64px; height: 64px; color: var(--accent); margin-bottom: 20px;
+    filter: drop-shadow(0 0 16px var(--accent-glow));
+}
+.lock-error { color: #fca5a5; font-size: 0.9rem; height: 20px; margin-top: 10px; }
     </style>
 </head>
 <body>
@@ -506,6 +538,50 @@ display: none;
                     Restore Backup
                     <input type="file" accept=".json" style="display: none;" onchange="importBackup(event)">
                 </label>
+            </div>
+        </div>
+
+        <!-- 3.5 APP LOCK -->
+        <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px; margin-bottom: 24px;">
+            <p style="font-size: 0.9rem; color: var(--muted); margin-bottom: 12px;">Privacy</p>
+            <div class="lock-toggle-row">
+                <div class="lock-toggle-label">
+                    <div class="lock-toggle-title">App Lock</div>
+                    <div class="lock-toggle-sub" id="lockToggleSub">Require Face ID / fingerprint to open MemStore</div>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" id="lockToggleInput" onchange="onLockToggle(this)">
+                    <span class="switch-slider"></span>
+                </label>
+            </div>
+            <div id="lockSubTriggers" style="display:none; flex-direction: column; gap: 10px; margin-top: 14px; padding-left: 4px;">
+                <div class="lock-toggle-row">
+                    <div class="lock-toggle-label">
+                        <div class="lock-toggle-sub" style="color: var(--text);">When opening the app</div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="lockOnOpenInput" onchange="onLockSubToggle('memLockOnOpen', this)">
+                        <span class="switch-slider"></span>
+                    </label>
+                </div>
+                <div class="lock-toggle-row">
+                    <div class="lock-toggle-label">
+                        <div class="lock-toggle-sub" style="color: var(--text);">When accessing previous memories</div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="lockOnArchivesInput" onchange="onLockSubToggle('memLockOnArchives', this)">
+                        <span class="switch-slider"></span>
+                    </label>
+                </div>
+                <div class="lock-toggle-row">
+                    <div class="lock-toggle-label">
+                        <div class="lock-toggle-sub" style="color: var(--text);">When re-accessing today's entry</div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="lockOnReeditInput" onchange="onLockSubToggle('memLockOnReedit', this)">
+                        <span class="switch-slider"></span>
+                    </label>
+                </div>
             </div>
         </div>
 
@@ -675,13 +751,27 @@ display: none;
           </div>
 
     <div class="dev-gear" title="Dev Switch: Force EOY Warp" onclick="devUnlock()">EOY</div>
+
+    <div id="lockScreen">
+        <svg class="lock-hero-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+        <h1 style="font-size: 1.6rem; margin: 0 0 6px 0;">MemStore is locked</h1>
+        <p class="subtitle" id="lockScreenSub" style="margin-bottom: 10px;">Unlock to view your memories</p>
+
+        <div id="lockBiometricArea" style="display:none; width: 100%; max-width: 280px;">
+            <button class="primary-btn" onclick="attemptBiometricUnlock()">Unlock with Face ID / Fingerprint</button>
+            <button class="secondary-btn" style="margin-top: 12px;" onclick="attemptBiometricUnlock()">Try Again</button>
+        </div>
+
+        <div class="lock-error" id="lockError"></div>
+    </div>
+
     <div id="warpOverlay" class="warp-overlay">
     <div class="core-pulse"></div>
     <div class="warp-core" id="warpCore"></div>
     <div id="warpMessage" class="warp-message">Initializing...</div>
     <div class="flash-bang" id="flashBang"></div>
 </div>
-<script>
+<script defer>
         // --- INDEXEDDB STORAGE SYSTEM ---
         const dbName = 'MemStoreDB';
         const storeName = 'vaults';
@@ -734,6 +824,191 @@ display: none;
         document.getElementById('colorPicker').value = savedColor;
         applyCustomColor(savedColor);
 
+        // --- APP LOCK (optional, off by default) ---
+        // Biometrics go through the WebAuthn platform authenticator (Face ID / Touch ID /
+        // Windows Hello / Android fingerprint). Everything stays on-device: no server round trip,
+        // no memory content is ever touched by this - it's purely a gate in front of the UI.
+        // Biometric-only, on purpose: there's no PIN/recovery flow built yet, so a PIN fallback
+        // would just be a way to get locked out. App Lock is simply unavailable on devices/
+        // browsers that don't support a platform authenticator.
+        const LOCK_ENABLED_KEY = 'memLockEnabled';
+        const LOCK_CRED_KEY = 'memLockCredId';
+        // Granular triggers - all default ON once App Lock is turned on, individually toggleable after.
+        const LOCK_ON_OPEN_KEY = 'memLockOnOpen';
+        const LOCK_ON_ARCHIVES_KEY = 'memLockOnArchives';
+        const LOCK_ON_REEDIT_KEY = 'memLockOnReedit';
+
+        function isLockOnOpenEnabled() { return localStorage.getItem(LOCK_ON_OPEN_KEY) !== 'false'; }
+        function isLockOnArchivesEnabled() { return localStorage.getItem(LOCK_ON_ARCHIVES_KEY) !== 'false'; }
+        function isLockOnReeditEnabled() { return localStorage.getItem(LOCK_ON_REEDIT_KEY) !== 'false'; }
+
+        let lockResolve = null;
+
+        function isLockEnabled() {
+            // Safety net: App Lock now requires a registered biometric credential (no PIN
+            // fallback exists anymore). If it was left on from before this change without
+            // a credential on file, treat it as off rather than locking anyone out.
+            if (localStorage.getItem(LOCK_ENABLED_KEY) !== 'true') return false;
+            if (!localStorage.getItem(LOCK_CRED_KEY)) {
+                localStorage.removeItem(LOCK_ENABLED_KEY);
+                return false;
+            }
+            return true;
+        }
+
+        async function platformAuthAvailable() {
+            try {
+                return !!(window.PublicKeyCredential &&
+                    PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable &&
+                    await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable());
+            } catch { return false; }
+        }
+
+        async function registerBiometric() {
+            const challenge = crypto.getRandomValues(new Uint8Array(32));
+            const userId = crypto.getRandomValues(new Uint8Array(16));
+            const cred = await navigator.credentials.create({
+                publicKey: {
+                    challenge,
+                    rp: { name: 'MemStore' },
+                    user: { id: userId, name: 'memstore-vault', displayName: 'MemStore Vault' },
+                    pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
+                    authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required', requireResidentKey: false },
+                    timeout: 60000
+                }
+            });
+            if (!cred) throw new Error('No credential created');
+            localStorage.setItem(LOCK_CRED_KEY, bufferToBase64(cred.rawId));
+        }
+
+        async function verifyBiometric() {
+            const credId = localStorage.getItem(LOCK_CRED_KEY);
+            if (!credId) throw new Error('No biometric registered');
+            const challenge = crypto.getRandomValues(new Uint8Array(32));
+            const assertion = await navigator.credentials.get({
+                publicKey: {
+                    challenge,
+                    allowCredentials: [{ id: base64ToBuffer(credId), type: 'public-key' }],
+                    userVerification: 'required',
+                    timeout: 60000
+                }
+            });
+            return !!assertion;
+        }
+
+        // --- Settings toggle (onboard screen) ---
+        async function onLockToggle(checkbox) {
+            if (checkbox.checked) {
+                checkbox.checked = false; // don't flip visually until setup actually completes
+                await runLockSetup();
+            } else {
+                if (!confirm('Turn off App Lock? Anyone who opens this browser will be able to read your memories.')) {
+                    checkbox.checked = true;
+                    return;
+                }
+                localStorage.removeItem(LOCK_ENABLED_KEY);
+                localStorage.removeItem(LOCK_CRED_KEY);
+                localStorage.removeItem(LOCK_ON_OPEN_KEY);
+                localStorage.removeItem(LOCK_ON_ARCHIVES_KEY);
+                localStorage.removeItem(LOCK_ON_REEDIT_KEY);
+                refreshLockToggleUI();
+            }
+        }
+
+        function refreshLockToggleUI() {
+            const input = document.getElementById('lockToggleInput');
+            const sub = document.getElementById('lockToggleSub');
+            if (!input) return;
+            const on = isLockEnabled();
+            input.checked = on;
+            sub.textContent = on
+                ? 'Enabled - Face ID / fingerprint is required to open MemStore'
+                : 'Require Face ID / fingerprint to open MemStore';
+
+            const subRow = document.getElementById('lockSubTriggers');
+            if (subRow) {
+                subRow.style.display = on ? 'flex' : 'none';
+                if (on) {
+                    document.getElementById('lockOnOpenInput').checked = isLockOnOpenEnabled();
+                    document.getElementById('lockOnArchivesInput').checked = isLockOnArchivesEnabled();
+                    document.getElementById('lockOnReeditInput').checked = isLockOnReeditEnabled();
+                }
+            }
+        }
+
+        function onLockSubToggle(key, checkbox) {
+            localStorage.setItem(key, checkbox.checked ? 'true' : 'false');
+        }
+
+        async function runLockSetup() {
+            // Biometric-only: no PIN fallback exists, so App Lock requires a working
+            // platform authenticator (Face ID / Touch ID / Windows Hello / fingerprint).
+            if (!(await platformAuthAvailable())) {
+                alert("Your device or browser doesn't support Face ID / fingerprint unlock, so App Lock isn't available right now.");
+                return;
+            }
+            if (!confirm('This will require Face ID / fingerprint to open MemStore. Continue?')) return;
+
+            try {
+                await registerBiometric();
+            } catch (e) {
+                console.warn('Biometric registration failed or was cancelled:', e);
+                alert("Couldn't set up Face ID / fingerprint (cancelled or not available). App Lock was not enabled.");
+                return;
+            }
+
+            localStorage.setItem(LOCK_ENABLED_KEY, 'true');
+            refreshLockToggleUI();
+            alert('App Lock is on. Unlock with Face ID / fingerprint.');
+        }
+
+        // --- The actual unlock gate shown at boot ---
+        function showLockScreen() {
+            return new Promise(async (resolve) => {
+                lockResolve = () => {
+                    document.getElementById('lockScreen').classList.remove('active');
+                    resolve();
+                };
+                document.getElementById('lockScreen').classList.add('active');
+                document.getElementById('lockScreenSub').textContent = 'Unlock to view your memories';
+                document.getElementById('lockError').textContent = '';
+
+                document.getElementById('lockBiometricArea').style.display = 'block';
+                attemptBiometricUnlock(); // prompt immediately
+            });
+        }
+
+        // Reusable re-auth gate for sensitive actions beyond app boot (viewing archives,
+        // re-opening a sealed entry). If App Lock isn't enabled, this is a no-op that
+        // resolves immediately - it never introduces a barrier the user didn't opt into.
+        function requireReauth(reasonText, subKeyCheck) {
+            if (!isLockEnabled()) return Promise.resolve(true);
+            if (subKeyCheck && !subKeyCheck()) return Promise.resolve(true);
+            return new Promise(async (resolve) => {
+                lockResolve = () => {
+                    document.getElementById('lockScreen').classList.remove('active');
+                    resolve(true);
+                };
+                document.getElementById('lockScreen').classList.add('active');
+                document.getElementById('lockScreenSub').textContent = reasonText || 'Unlock to view your memories';
+                document.getElementById('lockError').textContent = '';
+
+                document.getElementById('lockBiometricArea').style.display = 'block';
+                attemptBiometricUnlock();
+            });
+        }
+
+        async function attemptBiometricUnlock() {
+            document.getElementById('lockError').textContent = '';
+            try {
+                const ok = await verifyBiometric();
+                if (ok) lockResolve();
+            } catch (e) {
+                console.warn('Biometric unlock failed:', e);
+                document.getElementById('lockError').textContent = 'Biometric check failed or was cancelled.';
+            }
+        }
+
         async function bootApp() {
             memData = await loadFromDB('activeVault');
             archives = await loadFromDB('archives') || [];
@@ -755,7 +1030,17 @@ display: none;
 
             activeCapsule = memData;
             refreshPreviousYearsButton();
+            refreshLockToggleUI();
+
+            if (isLockEnabled() && isLockOnOpenEnabled()) {
+                await showLockScreen();
+            }
             checkAppState(); 
+
+            // Background-load Firebase after the journal is already interactive, so a
+            // previously-signed-in user's cloud sync resumes automatically without ever
+            // delaying the initial render.
+            loadFirebaseSDK().catch(e => console.warn('Cloud sync unavailable:', e));
         }
 
         function checkAppState() {
@@ -809,10 +1094,41 @@ display: none;
           measurementId: "G-KVGD7JCDYL"
         };
 
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.firestore();
-        const analytics = firebase.analytics();
+        // Cloud sync (Firebase) is entirely optional and loaded on demand, so a slow or
+        // blocked network never delays opening the local journal. `auth`/`db` stay undefined
+        // until loadFirebaseSDK() resolves; anything that touches them awaits it first.
+        let auth, db, analytics;
+        let firebaseLoadPromise = null;
+
+        function loadScript(src) {
+            return new Promise((resolve, reject) => {
+                const s = document.createElement('script');
+                s.src = src;
+                s.onload = resolve;
+                s.onerror = () => reject(new Error(`Failed to load ${src}`));
+                document.head.appendChild(s);
+            });
+        }
+
+        function loadFirebaseSDK() {
+            if (firebaseLoadPromise) return firebaseLoadPromise;
+            firebaseLoadPromise = (async () => {
+                const base = 'https://www.gstatic.com/firebasejs/10.8.0/';
+                await loadScript(base + 'firebase-app-compat.js');
+                await Promise.all([
+                    loadScript(base + 'firebase-auth-compat.js'),
+                    loadScript(base + 'firebase-firestore-compat.js'),
+                    loadScript(base + 'firebase-analytics-compat.js'),
+                ]);
+                firebase.initializeApp(firebaseConfig);
+                auth = firebase.auth();
+                db = firebase.firestore();
+                analytics = firebase.analytics();
+                attachAuthStateListener();
+                return true;
+            })();
+            return firebaseLoadPromise;
+        }
 
         function openActiveVault() {
             nav('screen-main');
@@ -1040,15 +1356,16 @@ display: none;
             }, 2600); 
         }
         
-        function unsealToday() {
-            if (memData.entries[activeEditDate]) {
-                memData.drafts[activeEditDate] = memData.entries[activeEditDate];
-                delete memData.entries[activeEditDate];
-                saveToDB('activeVault', memData); 
-                updateGridVisuals();
-                openEditor(activeEditDate);
-                updateFinalPrompt();
-            }
+        async function unsealToday() {
+            if (!memData.entries[activeEditDate]) return;
+            const ok = await requireReauth("Unlock to edit today's sealed entry", isLockOnReeditEnabled);
+            if (!ok) return;
+            memData.drafts[activeEditDate] = memData.entries[activeEditDate];
+            delete memData.entries[activeEditDate];
+            saveToDB('activeVault', memData); 
+            updateGridVisuals();
+            openEditor(activeEditDate);
+            updateFinalPrompt();
         }
 
         function updateGridVisuals() {
@@ -1270,7 +1587,10 @@ display: none;
                     button.className = index === 0 ? 'primary-btn' : 'secondary-btn';
                     button.style.marginBottom = '12px';
                     button.textContent = `${capsule.label || getCapsuleLabel(capsule)} Time Capsule`;
-                    button.onclick = () => triggerWarpSequence(capsule);
+                    button.onclick = async () => {
+                        const ok = await requireReauth('Unlock to view this time capsule', isLockOnArchivesEnabled);
+                        if (ok) triggerWarpSequence(capsule);
+                    };
                     list.appendChild(button);
                 });
             }
@@ -1468,21 +1788,23 @@ display: none;
             if (pullFromCloud) loadMemoriesFromCloud(false);
         }
 
-        auth.onAuthStateChanged(user => {
-            const syncBtn = document.getElementById('btnGoogleSync');
-            if (user) {
-                enableCloudSync(user, false);
-            } else {
-                if (cloudSyncUnsubscribe) {
-                    cloudSyncUnsubscribe();
-                    cloudSyncUnsubscribe = null;
+        function attachAuthStateListener() {
+            auth.onAuthStateChanged(user => {
+                const syncBtn = document.getElementById('btnGoogleSync');
+                if (user) {
+                    enableCloudSync(user, false);
+                } else {
+                    if (cloudSyncUnsubscribe) {
+                        cloudSyncUnsubscribe();
+                        cloudSyncUnsubscribe = null;
+                    }
+                    syncBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg> Sign in (to access your memories remotely!)`;
+                    syncBtn.style.borderColor = "rgba(255,255,255,0.1)";
+                    syncBtn.style.color = "var(--text)";
+                    syncBtn.onclick = handleAuthClick;
                 }
-                syncBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg> Sign in (to access your memories remotely!)`;
-                syncBtn.style.borderColor = "rgba(255,255,255,0.1)";
-                syncBtn.style.color = "var(--text)";
-                syncBtn.onclick = handleAuthClick;
-            }
-        });
+            });
+        }
 	async function handleSignOut() {
             if (confirm("Do you want to log out of MemStore?")) {
                 // Automatically download a backup before wiping the active cloud connection
@@ -1492,6 +1814,22 @@ display: none;
         }
 
         async function handleAuthClick() {
+            const syncBtn = document.getElementById('btnGoogleSync');
+            const originalText = syncBtn.innerHTML;
+            if (!auth) {
+                syncBtn.innerHTML = 'Connecting...';
+                syncBtn.disabled = true;
+                try {
+                    await loadFirebaseSDK();
+                } catch (e) {
+                    syncBtn.innerHTML = originalText;
+                    syncBtn.disabled = false;
+                    alert("Couldn't reach the cloud sync service. Check your connection and try again.");
+                    return;
+                }
+                syncBtn.disabled = false;
+            }
+
             if (auth.currentUser) return alert(`You are already connected as ${auth.currentUser.displayName}!`);
             
             // Automatically download a backup of local data before connecting to the cloud
