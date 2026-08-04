@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Policy - MemStore</title>
+    <link rel="icon" type="image/png" href="logo.png">
+    <style>
+        :root {
+            --bg-color: #020617;
+            --card-bg: rgba(30, 41, 59, 0.5);
+            --text-color: #f8fafc;
+            --text-muted: #64748b;
+            --accent-color: #6366f1;
+            --border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            margin: 0;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+            background: var(--card-bg);
+            padding: 40px;
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+        }
+
+        h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #ffffff;
+            margin-top: 0;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+
+        h2 {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--accent-color);
+            margin-top: 30px;
+            margin-bottom: 10px;
+        }
+
+        p {
+            margin: 0 0 16px 0;
+        }
+
+        ul {
+            margin: 0 0 16px 0;
+            padding-left: 20px;
+        }
+
+        li {
+            margin-bottom: 8px;
+        }
+
+        .meta {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            margin-bottom: 30px;
+        }
+
+        .callout {
+            background: rgba(99, 102, 241, 0.1);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 24px;
+            font-size: 0.92rem;
+        }
+
+        .callout.warn {
+            background: rgba(239, 68, 68, 0.08);
+            border-color: rgba(239, 68, 68, 0.3);
+        }
+
+        footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            text-align: center;
+        }
+
+        a {
+            color: var(--accent-color);
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>MemStore Privacy Policy</h1>
+    <div class="meta">Last Updated: August 2026</div>
+
+    <p>MemStore is built to be local-first: by default, your one-good-thing-a-day entries live only on your device. This policy explains exactly what that means, what changes if you turn on cloud sync, and what happens when you're offline.</p>
+
+    <h2>1. Open Source Notice</h2>
+    <p>MemStore is distributed under the MIT License and the source is fully public. This policy governs data handled by the officially hosted instance of the app connected to our Firebase project.</p>
+
+    <h2>2. Local-First by Default</h2>
+    <p>Every entry, draft, timestamp, and archive you create is stored directly in your browser's IndexedDB. This happens automatically and requires no account. If you never enable Google Sign-In, nothing you write is ever transmitted anywhere — it stays on your device.</p>
+
+    <h2>3. Offline Access</h2>
+    <p>MemStore uses a Service Worker to cache the app shell (the interface itself), so it keeps working even without an internet connection. Writing, sealing, and reading entries all work fully offline, since they read and write to IndexedDB directly.</p>
+    <p>When your device loses or regains connectivity, a small on-screen banner lets you know what's happening — for example, that you're offline and your entries are safe locally, or that you're back online and any pending sync to the cloud is underway. This banner is purely informational and runs entirely in your browser; it does not collect or transmit any data on its own.</p>
+
+    <h2>4. Optional Cloud Sync (Google Sign-In)</h2>
+    <p>If you choose to sign in with Google, MemStore can back up and sync your vault across devices using Firebase Authentication and Cloud Firestore. If you enable this:</p>
+    <ul>
+        <li><strong>Account Identifier:</strong> Your Google account's unique ID and display name, used to link your synced data to you and to show who you're signed in as.</li>
+        <li><strong>Encrypted Journal Data:</strong> Your entries, drafts, and archived years are encrypted in your browser (AES-256-GCM via the Web Crypto API) using a key derived from your account before they're ever sent to our servers. What reaches Firestore is ciphertext, not readable text.</li>
+        <li><strong>Sync Metadata:</strong> A last-synced timestamp, so the app can tell when your devices are up to date.</li>
+    </ul>
+    <p>When you're back online after a period offline, the app automatically pushes any entries you sealed while disconnected up to Firestore, and pulls down any newer encrypted data from your other devices, without you needing to do anything.</p>
+    <p>You can disconnect cloud sync at any time by signing out; MemStore will prompt a local backup export first so you always keep a copy of your data.</p>
+
+    <h2>5. Analytics</h2>
+    <p>When cloud features are used, MemStore loads Firebase Analytics, a service provided by Google, to help us understand aggregate app usage (for example, which screens are opened). This is not used to identify you personally. See the <a href="https://firebase.google.com/support/privacy" target="_blank" rel="noopener">Firebase Privacy and Security policy</a> for details on how Google handles this data.</p>
+
+    <h2>6. Developer Access & Visibility</h2>
+    <div class="callout">
+        <p style="margin:0;">Because sync relies on a centralized Firestore database, the core developer/administrator retains technical administrative access to the backend storage environment. However, since your journal content is encrypted client-side before upload, what's visible at the database level is ciphertext, account identifiers, and sync timestamps — not your actual entries. Data that stays local (i.e. if you never enable sign-in) is never visible to us in any form.</p>
+    </div>
+
+    <h2>7. No Third-Party Sharing</h2>
+    <p>Your entries, memories, and identifiers belong to you. We do not sell, trade, rent, or distribute any data captured through this platform to third-party services, data brokers, or advertising networks. Data is processed by Google/Firebase strictly as our infrastructure provider, under their own privacy and security terms.</p>
+
+    <h2>8. Local Storage, Caching, and Backups</h2>
+    <p>As a Progressive Web App, MemStore uses Service Workers and browser storage (IndexedDB and localStorage) to cache the app shell, remember your theme preference, and store your journal locally for offline use. You can also manually export an encrypted-free, human-readable JSON backup of your vault at any time, and restore from one — this file is saved directly to your device and never touches our servers unless you explicitly attach it elsewhere.</p>
+    <div class="callout warn">
+        <p style="margin:0;">⚠️ <strong>Important:</strong> If you never enable cloud sync, your entries exist only in this browser's IndexedDB. Clearing your browser data or site storage will permanently delete your vault. Exporting a backup regularly is the only way to protect against this if you stay fully offline.</p>
+    </div>
+
+    <h2>9. Data Retention and Control</h2>
+    <p>Local data persists on your device for as long as you keep it there. Cloud-synced data persists in Firestore for as long as your account connection is active. You can modify, overwrite, or clear your entries at any time from within the app, sign out to stop syncing, or contact us to request deletion of your cloud-stored data.</p>
+
+    <h2>10. Contact Us</h2>
+    <p>If you have any questions about this privacy policy, your data, or would like to request that your cloud-stored data be deleted, please contact us at:</p>
+    <p><a href="mailto:contactjenish.one@gmail.com">contactjenish.one@gmail.com</a></p>
+
+    <footer>
+        <p>Return to <a href="./index.html">MemStore</a></p>
+    </footer>
+</div>
+
+</body>
+</html>

@@ -489,9 +489,46 @@ display: none;
     filter: drop-shadow(0 0 16px var(--accent-glow));
 }
 .lock-error { color: #fca5a5; font-size: 0.9rem; height: 20px; margin-top: 10px; }
+    /* Offline / Connectivity Overlay */
+    .conn-banner {
+        position: fixed;
+        top: -80px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: calc(100% - 40px);
+        max-width: 460px;
+        background: rgba(15, 23, 42, 0.92);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 14px;
+        padding: 12px 16px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        z-index: 200;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+        transition: top 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+        font-size: 0.88rem;
+        line-height: 1.35;
+    }
+    .conn-banner.show { top: 16px; }
+    .conn-banner.offline { border-color: rgba(250, 204, 21, 0.35); }
+    .conn-banner.online { border-color: rgba(74, 222, 128, 0.35); }
+    .conn-banner .conn-dot {
+        width: 9px; height: 9px; border-radius: 50%; flex: 0 0 auto;
+    }
+    .conn-banner.offline .conn-dot { background: #facc15; box-shadow: 0 0 8px rgba(250,204,21,0.6); }
+    .conn-banner.online .conn-dot { background: #4ade80; box-shadow: 0 0 8px rgba(74,222,128,0.6); animation: connPulse 1.2s ease-in-out infinite; }
+    @keyframes connPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+    .conn-banner-text b { color: #fff; }
+    .conn-banner-text span { color: var(--muted); }
     </style>
 </head>
 <body>
+<div id="connBanner" class="conn-banner" role="status" aria-live="polite">
+    <div class="conn-dot"></div>
+    <div class="conn-banner-text" id="connBannerText"></div>
+</div>
 <div id="screen-onboard" class="screen">
         <div class="top-bar" style="justify-content: flex-end; margin-bottom: 0;">
             <button class="menu-btn" style="flex: 0 0 auto; padding: 8px 12px;" onclick="shareApp()" title="Share App">
@@ -823,6 +860,64 @@ display: none;
         let savedColor = localStorage.getItem('memCustomColor') || '#6366f1';
         document.getElementById('colorPicker').value = savedColor;
         applyCustomColor(savedColor);
+
+        // --- CONNECTIVITY / OFFLINE OVERLAY ---
+        // MemStore's journal is fully local-first (IndexedDB), so losing connection never
+        // blocks writing or reading entries. This overlay just keeps the user informed about
+        // what's happening with cloud sync, and makes sure any changes made offline get pushed
+        // to Firestore automatically the moment connectivity returns.
+        let connHideTimeout;
+        let wasOfflineForSync = false;
+
+        function showConnBanner(state, text) {
+            const banner = document.getElementById('connBanner');
+            const textEl = document.getElementById('connBannerText');
+            clearTimeout(connHideTimeout);
+            banner.classList.remove('online', 'offline');
+            banner.classList.add(state, 'show');
+            textEl.innerHTML = text;
+        }
+
+        function hideConnBanner(delay = 0) {
+            clearTimeout(connHideTimeout);
+            connHideTimeout = setTimeout(() => {
+                document.getElementById('connBanner').classList.remove('show');
+            }, delay);
+        }
+
+        function handleGoneOffline() {
+            wasOfflineForSync = true;
+            showConnBanner('offline', `<b>You're offline.</b> <span>MemStore still works — entries save to this device and will sync automatically when you're back online.</span>`);
+            // Stays visible the whole time offline; no auto-hide.
+        }
+
+        async function handleBackOnline() {
+            const isSignedIn = !!(auth && auth.currentUser);
+            if (wasOfflineForSync && isSignedIn) {
+                showConnBanner('online', `<b>Back online.</b> <span>Syncing your memories to the cloud...</span>`);
+                try {
+                    await saveMemoriesToCloud();
+                    showConnBanner('online', `<b>Back online.</b> <span>Your memories are synced.</span>`);
+                } catch (e) {
+                    showConnBanner('online', `<b>Back online.</b> <span>We'll retry syncing shortly.</span>`);
+                }
+            } else if (wasOfflineForSync) {
+                showConnBanner('online', `<b>Back online.</b> <span>Sign in any time to back up your entries to the cloud.</span>`);
+            } else {
+                // Came online without ever having shown an offline banner this session (e.g. first load) - stay silent.
+                wasOfflineForSync = false;
+                return;
+            }
+            wasOfflineForSync = false;
+            hideConnBanner(3200);
+        }
+
+        function initConnectivityWatcher() {
+            window.addEventListener('offline', handleGoneOffline);
+            window.addEventListener('online', handleBackOnline);
+            // If the app happens to load while already offline, let the user know right away.
+            if (!navigator.onLine) handleGoneOffline();
+        }
 
         // --- APP LOCK (optional, off by default) ---
         // Biometrics go through the WebAuthn platform authenticator (Face ID / Touch ID /
@@ -1931,11 +2026,12 @@ display: none;
                 }
             });
         }        
-        window.onload = bootApp;
+        window.onload = () => { bootApp(); initConnectivityWatcher(); };
     </script>
 <footer style="margin-top: auto; padding: 40px 0 20px 0; text-align: center; opacity: 0.4; font-size: 0.8rem; letter-spacing: 0.5px;">
     <p style="margin: 0;">© 2026 Jenish</p>
     <p style="margin: 5px 0 0 0;">Created by Jenish with Gemini & ChatGPT</p>
+    <p style="margin: 8px 0 0 0;"><a href="privacy-policy.html" style="color: inherit;">Privacy Policy</a></p>
     <img src="https://hits.sh/jenishestmoizavut.github.io/MemStore.svg?view=today-total" 
      style="display: none;" 
      alt="hidden-counter">
