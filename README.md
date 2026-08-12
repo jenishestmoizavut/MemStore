@@ -8,6 +8,7 @@ Built for the "Year Zero" experiment, this app ensures your memories stay exactl
 
 - **Local-Only Vault**: Powered by **IndexedDB**, allowing for massive storage capacity without ever sending data to a server.
 - **Privacy by Design**: No accounts, no tracking, and no cloud-syncing. Your data never leaves your browser.
+- **Biometric App Lock**: Secure your vault with device-native biometric authentication (fingerprint/Face ID) — no PINs to remember or leak.
 - **The 365-Day Lock**: Past entries are visually tracked on a grid but remain unreadable until your timeline is complete.
 - **PWA Ready**: Installable on iOS and Android for a native app experience.
 - **Tactile UI**: Smooth sine-wave audio feedback and directional sliding animations for memory review.
@@ -23,14 +24,15 @@ Built for the "Year Zero" experiment, this app ensures your memories stay exactl
 ## 🚀 Installation
 
 Since this is a PWA, you don't need an app store:
-1. Visit the [Live Demo](https://YOUR-USERNAME.github.io/YOUR-REPO-NAME/)
-2. **iOS**: Tap 'Share' -> 'Add to Home Screen'.
-3. **Android**: Tap the three dots -> 'Install App'.
+
+1. Visit the [Live Demo](https://jenishestmoizavut.github.io/MemStore/)
+2. **iOS**: Tap 'Share' → 'Add to Home Screen'.
+3. **Android**: Tap the three dots → 'Install App'.
 
 ## 📜 License
 
-This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the **MIT License** - see the [LICENSE](https://github.com/jenishestmoizavut/MemStore/blob/main/LICENSE) file for details.
 
 ---
-Created by **Jenish** with a touch of Gemini & ChatGPT.
-*"We shall meet at the end of the year."*
+
+Created by **Jenish** with a touch of Gemini & ChatGPT. *"We shall meet at the end of the year."*
