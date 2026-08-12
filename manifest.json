@@ -2,7 +2,7 @@
   "id": "/MemStore/",
   "name": "MemStore",
   "short_name": "MemStore",
-  "description": "A private, serverless 365-day time capsule. Write one good thing each day, then relive the year when the timeline is complete.",
+  "description": "A private 365-day time capsule to write one good thing each day, then relive the year when the timeline is complete.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
