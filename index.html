@@ -787,6 +787,22 @@ will-change: transform, opacity;
             <div class="progress-text" id="homeProgressText" style="text-align: center; margin-bottom: 18px;">Day X of 365</div>
             <button class="primary-btn" onclick="openActiveVault()">Enter Vault</button>
         </div>
+
+        <!-- SAFETY MILESTONE BACKUP REMINDER -->
+        <div id="safetyBackupReminder" style="display: none; background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.35); border-radius: 16px; padding: 16px; margin-bottom: 18px; text-align: left;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                <span style="font-weight: 800; color: #6ee7b7; font-size: 0.92rem; display: flex; align-items: center; gap: 6px;">
+                    🛡️ Safety Milestone (<span id="backupEntryCount">0</span> Memories)
+                </span>
+                <button onclick="dismissBackupReminder()" style="background: none; border: none; color: #94a3b8; font-size: 1.2rem; cursor: pointer; padding: 0 4px; line-height: 1;" title="Dismiss">✕</button>
+            </div>
+            <p style="margin: 0 0 12px 0; font-size: 0.82rem; color: #cbd5e1; line-height: 1.45;">
+                You've built a wonderful streak! Save a quick backup copy to your phone or Google Drive so your memories stay safe forever.
+            </p>
+            <button class="secondary-btn" onclick="exportBackup(); dismissBackupReminder();" style="width: 100%; padding: 10px; font-size: 0.85rem; font-weight: 700; border-color: rgba(16, 185, 129, 0.4); color: #6ee7b7; background: rgba(16, 185, 129, 0.12);">
+                📥 Save Quick Backup
+            </button>
+        </div>
         
         <!-- 2. ARCHIVES -->
         <div id="previousYearsHome" style="display: none; margin-bottom: 24px;">
@@ -1074,24 +1090,97 @@ will-change: transform, opacity;
             });
         }
 
+        async function requestPersistentStorage() {
+            try {
+                if (navigator.storage && navigator.storage.persist) {
+                    const isPersisted = await navigator.storage.persisted();
+                    if (!isPersisted) {
+                        const granted = await navigator.storage.persist();
+                        console.log('[Storage] Persistent storage requested, granted:', granted);
+                    } else {
+                        console.log('[Storage] Storage is already persistent.');
+                    }
+                }
+            } catch (err) {
+                console.warn('[Storage] Persistent storage query error:', err);
+            }
+        }
+
         async function saveToDB(key, data) {
-            const db = await initDB();
-            return new Promise((resolve, reject) => {
-                const tx = db.transaction(storeName, 'readwrite');
-                tx.objectStore(storeName).put(data, key);
-                tx.oncomplete = () => resolve();
-                tx.onerror = () => reject();
-            });
+            // 1. Android Native Disk Persistence (Atomic / Resilient)
+            if (window.AndroidStorage && typeof window.AndroidStorage.saveToInternal === 'function') {
+                try {
+                    const payload = data ? JSON.stringify(data) : null;
+                    window.AndroidStorage.saveToInternal(key, payload);
+                } catch (e) {
+                    console.warn('[Storage] Android internal disk write warning:', e);
+                }
+            }
+
+            // 2. Browser / WebView IndexedDB
+            try {
+                const db = await initDB();
+                return new Promise((resolve) => {
+                    const tx = db.transaction(storeName, 'readwrite');
+                    tx.objectStore(storeName).put(data, key);
+                    tx.oncomplete = () => resolve();
+                    tx.onerror = () => resolve(); // don't freeze UI if IndexedDB quota glitches
+                });
+            } catch (e) {
+                console.warn('[Storage] IndexedDB save warning (Android disk mirror succeeded):', e);
+            }
         }
 
         async function loadFromDB(key) {
-            const db = await initDB();
-            return new Promise((resolve, reject) => {
-                const tx = db.transaction(storeName, 'readonly');
-                const request = tx.objectStore(storeName).get(key);
-                request.onsuccess = () => resolve(request.result);
-                request.onerror = () => reject();
-            });
+            let data = null;
+
+            // 1. Attempt load from IndexedDB
+            try {
+                const db = await initDB();
+                data = await new Promise((resolve) => {
+                    const tx = db.transaction(storeName, 'readonly');
+                    const request = tx.objectStore(storeName).get(key);
+                    request.onsuccess = () => resolve(request.result);
+                    request.onerror = () => resolve(null);
+                });
+            } catch (e) {
+                console.warn('[Storage] IndexedDB read warning:', e);
+            }
+
+            // 2. Android Native Disk Recovery & Sync
+            if (window.AndroidStorage && typeof window.AndroidStorage.loadFromInternal === 'function') {
+                try {
+                    const internalRaw = window.AndroidStorage.loadFromInternal(key);
+                    if (internalRaw) {
+                        const internalData = JSON.parse(internalRaw);
+                        if (!data) {
+                            // IndexedDB was wiped or empty! Seamlessly recover from Android internal storage
+                            console.log(`[Storage] Seamlessly restored '${key}' from Android internal disk!`);
+                            data = internalData;
+                            try {
+                                const db = await initDB();
+                                const tx = db.transaction(storeName, 'readwrite');
+                                tx.objectStore(storeName).put(data, key);
+                            } catch (_) {}
+                        } else if (key === 'activeVault' && internalData && internalData.entries && data && data.entries) {
+                            // If internal disk has more memories, upgrade to internal disk
+                            const internalCount = Object.keys(internalData.entries).length;
+                            const idbCount = Object.keys(data.entries).length;
+                            if (internalCount > idbCount) {
+                                console.log(`[Storage] Internal disk has ${internalCount} entries vs IDB ${idbCount}. Synchronizing to internal disk.`);
+                                data = internalData;
+                            }
+                        }
+                    } else if (data) {
+                        // First run with storage bridge: populate Android internal disk
+                        window.AndroidStorage.saveToInternal(key, JSON.stringify(data));
+                    }
+                } catch (e) {
+                    console.error('[Storage] Error reconciling Android storage:', e);
+                }
+            }
+
+            return data;
         }
 
         // --- APP STATE ---
@@ -1377,6 +1466,7 @@ will-change: transform, opacity;
             if (isLockEnabled() && isLockOnOpenEnabled()) {
                 await showLockScreen();
             }
+            requestPersistentStorage();
             checkAppState(); 
 
             // Background-load Firebase after the journal is already interactive, so a
@@ -1387,6 +1477,7 @@ will-change: transform, opacity;
 
         function checkAppState() {
             nav('screen-onboard'); 
+            checkBackupReminder(); 
             
             const currentYear = new Date().getFullYear();
             const nyLabel = document.getElementById('newYearLabel');
@@ -2040,6 +2131,30 @@ will-change: transform, opacity;
             });
         }
 
+        // --- SAFETY MILESTONE REMINDER ---
+        function checkBackupReminder() {
+            if (!memData || !memData.entries) return;
+            const totalEntries = Object.keys(memData.entries).length;
+            if (totalEntries < 10) return;
+
+            const lastDismissedAt = parseInt(localStorage.getItem('memLastBackupReminderCount') || '0');
+            if (totalEntries >= 10 && (totalEntries - lastDismissedAt >= 30 || lastDismissedAt === 0)) {
+                const reminderEl = document.getElementById('safetyBackupReminder');
+                const countEl = document.getElementById('backupEntryCount');
+                if (reminderEl && countEl) {
+                    countEl.textContent = totalEntries;
+                    reminderEl.style.display = 'block';
+                }
+            }
+        }
+
+        function dismissBackupReminder() {
+            const totalEntries = (memData && memData.entries) ? Object.keys(memData.entries).length : 0;
+            localStorage.setItem('memLastBackupReminderCount', totalEntries.toString());
+            const reminderEl = document.getElementById('safetyBackupReminder');
+            if (reminderEl) reminderEl.style.display = 'none';
+        }
+
         // --- BACKUP & RESTORE SYSTEM (Local Plaintext) ---
         async function exportBackup() {
             try {
@@ -2055,6 +2170,10 @@ will-change: transform, opacity;
                 a.click();
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
+                const count = (memData && memData.entries) ? Object.keys(memData.entries).length : 0;
+                localStorage.setItem('memLastBackupReminderCount', count.toString());
+                const reminderEl = document.getElementById('safetyBackupReminder');
+                if (reminderEl) reminderEl.style.display = 'none';
             } catch (error) {
                 alert("Failed to export backup. Ensure you have an active vault.");
             }
