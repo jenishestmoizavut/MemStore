@@ -1,0 +1,3926 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- Firebase is loaded lazily via loadFirebaseSDK() further down, so the app
+     never blocks on it - cloud sync is optional, the journal itself is fully local. -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#020617">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="application-name" content="MemStore">
+    <meta name="apple-mobile-web-app-title" content="MemStore">
+    <meta name="robots" content="index, follow">
+
+    <meta name="title" content="MemStore - Secure Digital Journaling">
+    <meta name="description" content="A secure, cloud-synced digital journaling application to record and organize your thoughts effortlessly.">
+    <meta name="keywords" content="journaling app, digital diary, secure journal, personal logging, productivity, web app">
+    <meta name="author" content="Jenish">
+
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://jenishestmoizavut.github.io/MemStore/">
+    <meta property="og:title" content="MemStore - Secure Digital Journaling">
+    <meta property="og:description" content="A secure, cloud-synced digital journaling application to record and organize your thoughts effortlessly.">
+    <meta property="og:image" content="https://jenishestmoizavut.github.io/MemStore/logo.png">
+
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://jenishestmoizavut.github.io/MemStore/">
+    <meta property="twitter:title" content="MemStore - Secure Digital Journaling">
+    <meta property="twitter:description" content="A secure, cloud-synced digital journaling application to record and organize your thoughts effortlessly.">
+    <meta property="twitter:image" content="https://jenishestmoizavut.github.io/MemStore/logo.png">
+
+    <link rel="canonical" href="https://jenishestmoizavut.github.io/MemStore/">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" href="logo.png">
+    <link rel="apple-touch-icon" href="logo.png">
+
+    <title>MemStore | One Good Thing</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700;800&display=swap" rel="stylesheet">
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "MemStore",
+      "url": "https://jenishestmoizavut.github.io/MemStore/",
+      "image": "https://jenishestmoizavut.github.io/MemStore/logo.png",
+      "description": "A 365-day daily journaling app. Write one good thing daily and unlock your memories at year's end.",
+      "applicationCategory": "LifestyleApplication",
+      "operatingSystem": "Any",
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+      "author": {
+        "@type": "Person",
+        "name": "Jenish",
+        "url": "https://jenishestmoizavut.github.io/jenish.one"
+      }
+    }
+    </script>
+
+    <style>
+        :root {
+            --bg: #020617;
+            --card: rgba(30, 41, 59, 0.5);
+            --text: #f8fafc;
+            --muted: #64748b;
+            --accent: #6366f1;
+            --accent-glow: rgba(99, 102, 241, 0.4);
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Outfit', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            overflow-x: hidden;
+            transition: background 0.5s;
+        }
+
+        .screen { display: none; width: 100%; max-width: 500px; text-align: center; animation: fadeIn 0.4s ease-out; }
+        .screen.active { display: block; }
+
+        h1 { font-size: 2.8rem; font-weight: 800; margin: 20px 0 10px 0; letter-spacing: -1px; }
+        .subtitle { color: var(--muted); margin-bottom: 30px; font-size: 1.1rem; line-height: 1.5; }
+
+        button.primary-btn {
+            width: 100%; background: var(--accent); color: white; border: none;
+            padding: 16px; border-radius: 14px; font-weight: 600; font-size: 1.1rem;
+            cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 20px var(--accent-glow);
+        }
+        button.primary-btn:hover { transform: translateY(-2px); filter: brightness(1.1); }
+        
+        .radio-group { display: flex; flex-direction: column; gap: 12px; margin-bottom: 30px; }
+        .radio-label {
+            background: var(--card); padding: 18px; border-radius: 14px;
+            border: 1px solid rgba(255,255,255,0.1); cursor: pointer;
+            display: flex; align-items: center; gap: 10px; transition: 0.2s;
+        }
+        .radio-label:hover { border-color: var(--accent); }
+        input[type="radio"] { accent-color: var(--accent); transform: scale(1.2); }
+        input[type="date"] {
+            background: var(--bg); color: white; border: 1px solid rgba(255,255,255,0.2);
+            padding: 10px; border-radius: 8px; font-family: inherit; margin-top: 10px;
+            display: none; width: 90%;
+        }
+
+        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        
+        .theme-picker { 
+            width: 24px; height: 24px; border-radius: 50%; 
+            overflow: hidden; border: 2px solid rgba(255,255,255,0.3);
+            position: relative; cursor: pointer; transition: transform 0.2s;
+            box-shadow: 0 0 10px var(--accent-glow);
+        }
+        .theme-picker:hover { transform: scale(1.15); border-color: #fff; }
+        .theme-picker input[type="color"] {
+            position: absolute; top: -10px; left: -10px;
+            width: 50px; height: 50px; cursor: pointer; border: none; padding: 0;
+            background: transparent;
+        }
+
+        .progress-container { width: 100%; background: var(--card); border-radius: 10px; height: 10px; overflow: hidden; margin-bottom: 10px; }
+        .progress-bar { height: 100%; background: var(--accent); width: 0%; transition: width 0.5s ease, background-color 0.3s; }
+        .progress-text { font-size: 0.85rem; color: var(--muted); text-align: left; margin-bottom: 25px; }
+
+        .grid-wrapper {
+            background: var(--card); padding: 20px; border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.05); margin-bottom: 30px;
+        }
+        .calendar-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(12px, 1fr));
+            gap: 4px; justify-content: center;
+        }
+        .day-block {
+            aspect-ratio: 1; background: #1e293b; border-radius: 3px;
+            cursor: pointer; transition: 0.2s background-color, 0.2s border-color, 0.2s box-shadow; position: relative;
+        }
+        .day-block.filled { background: var(--accent); box-shadow: 0 0 6px var(--accent-glow); }
+        .day-block.missed { border: 1px solid var(--accent); background: transparent; }
+        .day-block.today { border: 2px solid white; }
+        .day-block.locked { opacity: 0.3; cursor: default; }
+
+        .input-wrap { 
+            background: var(--card); border-radius: 20px; padding: 20px; 
+            border: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px;
+            min-height: 220px; position: relative; overflow: hidden;
+        }
+        .active-date-label { font-weight: 700; margin-bottom: 10px; color: var(--accent); text-align: left; display: block; transition: color 0.3s; }
+        
+        textarea {
+            width: 100%; height: 100px; background: transparent; border: none;
+            color: white; font-family: inherit; font-size: 1.1rem; resize: none;
+            outline: none; box-sizing: border-box; line-height: 1.4;
+        }
+        
+        .editor-bottom { display: flex; justify-content: space-between; align-items: center; margin-top: 15px; }
+        .save-status { font-size: 0.85rem; color: var(--muted); font-weight: 500; }
+        
+        button.seal-btn {
+            background: var(--accent);
+            color: #ffffff;
+            font-family: 'Outfit', sans-serif;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+            border: none; 
+            padding: 10px 28px; 
+            border-radius: 12px;
+            font-weight: 700; 
+            font-size: 1rem;
+            cursor: pointer; 
+            transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+            box-shadow: 0 4px 15px var(--accent-glow);
+        }
+        button.seal-btn:hover { 
+            transform: scale(1.05) translateY(-1px); 
+            filter: brightness(1.1);
+            box-shadow: 0 8px 25px var(--accent-glow); 
+        }
+
+        .sealed-ui {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            height: 180px; text-align: center; color: var(--muted);
+        }
+        .sealed-icon-static { width: 32px; height: 32px; margin-bottom: 12px; color: var(--accent); opacity: 0.8; transition: color 0.3s; }
+        .sealed-title { font-weight: 700; color: white; margin-bottom: 4px; font-size: 1.1rem; }
+        .sealed-date { font-size: 0.9rem; margin-top: 5px; }
+        .sealed-time { font-size: 0.85rem; color: var(--accent); margin-top: 4px; font-family: monospace; letter-spacing: 1px; opacity: 0.9; transition: color 0.3s; }
+        
+        button.unseal-btn {
+            background: rgba(255,255,255,0.05); color: var(--text); border: 1px solid rgba(255,255,255,0.1);
+            padding: 8px 16px; border-radius: 8px; font-size: 0.85rem; cursor: pointer; transition: 0.2s; margin-top: 15px;
+        }
+        button.unseal-btn:hover { background: rgba(255,255,255,0.1); border-color: var(--accent); }
+
+        .anim-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--card); backdrop-filter: blur(15px);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            opacity: 0; pointer-events: none; transition: opacity 0.4s; z-index: 10;
+        }
+        .anim-overlay.active { opacity: 1; pointer-events: all; }
+        
+        .lock-container {
+            width: 60px; height: 60px; position: relative; margin-bottom: 15px;
+            transform: scale(0); transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .anim-overlay.active .lock-container { transform: scale(1.2); }
+        
+        .shackle {
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.3s;
+            transform-origin: 17px 11px;
+            transform: translateY(-4px) rotate(-15deg); 
+        }
+        .anim-overlay.active .shackle { transform: translateY(0) rotate(0); }
+
+        .anim-text {
+            color: white; font-weight: 700; font-size: 1.2rem;
+            transform: translateY(10px); opacity: 0; transition: all 0.5s ease 0.4s;
+        }
+        .anim-overlay.active .anim-text { transform: translateY(0); opacity: 1; }
+
+        .timeline-view { text-align: left; width: 100%; margin-top: 20px; }
+        .eoy-options { display: flex; flex-direction: column; gap: 12px; margin: 24px 0; }
+        .secondary-btn {
+            width: 100%; background: var(--card); color: var(--text);
+            border: 1px solid rgba(255,255,255,0.1); padding: 16px;
+            border-radius: 14px; font-weight: 600; font-size: 1rem;
+            cursor: pointer; transition: all 0.2s; font-family: inherit;
+        }
+        .secondary-btn:hover { border-color: var(--accent); transform: translateY(-2px); }
+        .reader-card {
+            background: var(--card); border-radius: 20px; padding: 22px;
+            border: 1px solid rgba(255,255,255,0.1); text-align: left; margin-top: 20px;
+        }
+        .reader-date { color: var(--accent); font-weight: 700; margin-bottom: 10px; }
+        .reader-entry { line-height: 1.6; font-size: 1.1rem; white-space: pre-wrap; }
+        .reader-controls { display: flex; gap: 10px; margin-top: 18px; }
+        .reader-controls button { flex: 1; }
+        .reader-count { color: var(--muted); font-size: 0.85rem; text-align: center; margin-top: 12px; }
+        
+        .final-prompt {
+            display: none; background: linear-gradient(135deg, var(--card), rgba(99,102,241,0.16));
+            border: 1px solid rgba(255,255,255,0.14); border-radius: 20px;
+            padding: 18px; margin-bottom: 20px; text-align: left;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.22);
+        }
+        .final-prompt.active { display: block; }
+        .final-prompt-title { color: white; font-weight: 800; font-size: 1.15rem; margin-bottom: 4px; }
+        .final-prompt-copy { color: var(--muted); line-height: 1.5; margin: 0 0 14px 0; }
+        
+        /* WARP TUNNEL EFFECTS */
+        .warp-overlay {
+            position: fixed; inset: 0; background: #000;
+            display: flex; align-items: center; justify-content: center; opacity: 0;
+            pointer-events: none; z-index: 99; transition: opacity 0.5s ease; overflow: hidden;
+            perspective: 800px;
+        }
+        .warp-overlay.active { opacity: 1; pointer-events: all; }
+        
+        .warp-core {
+            position: absolute;
+            width: 10px; height: 10px; border-radius: 50%;
+            background: var(--accent); 
+            box-shadow: 0 0 80px 60px var(--accent);
+            animation: warpCoreExpand 3.5s cubic-bezier(0.8, 0, 0.2, 1) forwards;
+        }
+
+        button { font-family: 'Outfit', sans-serif !important; }
+
+        @keyframes gridCascade {
+            from { opacity: 0; transform: scale(0.3); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .cascade-block {
+            animation: gridCascade 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) backwards;
+        }
+
+        .flying-entry {
+            position: absolute; color: var(--text); font-weight: 700; font-size: 1.2rem;
+            white-space: nowrap; opacity: 0; pointer-events: none;
+            text-shadow: 0 0 15px var(--accent-glow);
+            animation: flyPast 1.2s cubic-bezier(0.5, 0, 0.5, 1) forwards;
+            transform: translate(-50%, -50%) scale(0.1);
+will-change: transform, opacity;
+        }
+
+        .flash-bang {
+            position: absolute; inset: 0; background: #fff; opacity: 0;
+            pointer-events: none; transition: opacity 0.2s;
+        }
+        .flash-bang.active { opacity: 1; transition: opacity 0.1s; }
+
+        .archive-list { display: flex; flex-direction: column; gap: 12px; margin: 24px 0; }
+        .memory-card { 
+            background: var(--card); padding: 20px; border-radius: 16px; margin-bottom: 12px; 
+            border-left: 4px solid var(--accent); animation: slideIn 0.5s ease-out forwards; opacity: 0; 
+        }
+        .dev-gear { 
+            position: fixed; bottom: 15px; right: 15px; width: 30px; height: 30px; 
+            opacity: 0.95; cursor: pointer; transition: 0.3s; color: white; 
+            display: flex; align-items: center; justify-content: center; font-size: 1.2rem; z-index: 100;
+
+        }
+        .dev-gear:hover { opacity: 1; }
+
+        @keyframes slideIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        @keyframes warpCoreExpand {
+            0% { transform: scale(0.1); opacity: 0; }
+            50% { transform: scale(1); opacity: 1; }
+            90% { transform: scale(50); opacity: 1; }
+            100% { transform: scale(100); opacity: 0; }
+        }
+
+        @keyframes flyPast {
+            0% { opacity: 0.5; transform: translate(-50%, -50%) scale(0.1); filter: blur(4px); }
+            30% { opacity: 1; filter: blur(0px); }
+            100% { opacity: 0.1; transform: translate(-50%, -50%) scale(5); filter: blur(4px); }
+        }
+
+        @keyframes popInFill {
+            0% { transform: scale(1); background: #1e293b; box-shadow: none; }
+            50% { transform: scale(1.2); background: var(--accent); box-shadow: 0 0 10px var(--accent-glow); }
+            100% { transform: scale(1); background: var(--accent); box-shadow: 0 0 6px var(--accent-glow); }
+        }
+
+        .day-block.anim-fill {
+            animation: popInFill 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        /* Home Menu Bar */
+        .home-menu-bar {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 10px;
+            margin-bottom: 20px;
+            width: 100%;
+        }
+        .menu-btn {
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--muted);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 12px 18px;
+            border-radius: 12px;
+            font-family: inherit;
+            font-weight: 500;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+            justify-content: center;
+        }
+        .menu-btn:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text);
+            border-color: var(--accent);
+        }
+
+        .secondary-btn-link {
+            display: block;
+            width: 100%;
+            background: var(--card);
+            color: var(--text);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 16px;
+            border-radius: 14px;
+            font-weight: 600;
+            font-size: 1rem;
+            text-align: center;
+            text-decoration: none;
+            box-sizing: border-box; 
+            transition: all 0.2s;
+            margin-top: 12px;
+        }
+
+        .secondary-btn-link:hover {
+            border-color: var(--accent);
+            transform: translateY(-2px);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        /* Reader Slide Animations */
+        @keyframes slideInRight {
+            from { opacity: 0; transform: translateX(30px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes slideInLeft {
+            from { opacity: 0; transform: translateX(-30px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .slide-in-right { animation: slideInRight 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+        .slide-in-left { animation: slideInLeft 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+
+        .fade-content { animation: fadeIn 0.3s ease-out; }
+/* Enhanced Warp Effects */
+.warp-message {
+    position: absolute;
+    bottom: 20%;
+    color: var(--accent);
+    font-weight: 300;
+    font-size: 0.9rem;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    opacity: 0;
+    transition: opacity 1s;
+}
+.warp-overlay.active .warp-message {
+    opacity: 1;
+}
+
+@keyframes corePulse {
+    0% { transform: scale(1); opacity: 0.5; }
+    50% { transform: scale(1.5); opacity: 1; }
+    100% { transform: scale(1); opacity: 0.5; }
+}
+
+.core-pulse {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid var(--accent);
+    animation: corePulse 1s infinite;
+}
+
+@keyframes warpCoreExpand {
+    0% { transform: scale(0.1); opacity: 0; }
+    20% { transform: scale(1); opacity: 1; }
+    80% { transform: scale(1.5); opacity: 1; } /* Slow expansion during deconstruction */
+    95% { transform: scale(100); opacity: 1; } /* Final snap */
+    100% { transform: scale(100); opacity: 0; }
+}
+.danger-zone-btn {
+    width: 100%;
+    background: rgba(239, 68, 68, 0.05);
+    color: #fca5a5;
+    border: 1px solid rgba(252, 165, 165, 0.2);
+    padding: 16px;
+    border-radius: 14px;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+}
+.danger-zone-btn:hover { 
+    background: rgba(239, 68, 68, 0.15); 
+    border-color: #ef4444; 
+}
+
+/* --- App Lock --- */
+.lock-toggle-row {
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--card); padding: 16px 18px; border-radius: 14px;
+    border: 1px solid rgba(255,255,255,0.1); margin-bottom: 12px;
+}
+.lock-toggle-label { text-align: left; }
+.lock-toggle-title { font-weight: 600; font-size: 0.98rem; }
+.lock-toggle-sub { font-size: 0.8rem; color: var(--muted); margin-top: 2px; }
+.switch { position: relative; display: inline-block; width: 46px; height: 26px; flex-shrink: 0; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.switch-slider {
+    position: absolute; cursor: pointer; inset: 0; background: rgba(255,255,255,0.15);
+    transition: 0.2s; border-radius: 34px;
+}
+.switch-slider:before {
+    position: absolute; content: ""; height: 20px; width: 20px; left: 3px; bottom: 3px;
+    background: white; transition: 0.2s; border-radius: 50%;
+}
+.switch input:checked + .switch-slider { background: var(--accent); }
+.switch input:checked + .switch-slider:before { transform: translateX(20px); }
+
+#lockScreen {
+    position: fixed; inset: 0; background: var(--bg); z-index: 1000;
+    display: none; flex-direction: column; align-items: center; justify-content: center;
+    padding: 20px; text-align: center;
+}
+#lockScreen.active { display: flex; }
+.lock-hero-icon {
+    width: 64px; height: 64px; color: var(--accent); margin-bottom: 20px;
+    filter: drop-shadow(0 0 16px var(--accent-glow));
+}
+.lock-error { color: #fca5a5; font-size: 0.9rem; height: 20px; margin-top: 10px; }
+    /* Offline / Connectivity Overlay */
+    .conn-banner {
+        position: fixed;
+        top: -80px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: calc(100% - 40px);
+        max-width: 460px;
+        background: rgba(15, 23, 42, 0.92);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 14px;
+        padding: 12px 16px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        z-index: 200;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+        transition: top 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+        font-size: 0.88rem;
+        line-height: 1.35;
+    }
+    .conn-banner.show { top: 16px; }
+    .conn-banner.offline { border-color: rgba(250, 204, 21, 0.35); }
+    .conn-banner.online { border-color: rgba(74, 222, 128, 0.35); }
+    .conn-banner .conn-dot {
+        width: 9px; height: 9px; border-radius: 50%; flex: 0 0 auto;
+    }
+    .conn-banner.offline .conn-dot { background: #facc15; box-shadow: 0 0 8px rgba(250,204,21,0.6); }
+    .conn-banner.online .conn-dot { background: #4ade80; box-shadow: 0 0 8px rgba(74,222,128,0.6); animation: connPulse 1.2s ease-in-out infinite; }
+    @keyframes connPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+    .conn-banner-text b { color: #fff; }
+    .conn-banner-text span { color: var(--muted); }
+    
+    /* =========================================
+       GOLDEN MOMENT (STAR TOGGLE & BADGE)
+       ========================================= */
+    .day-block.starred {
+        border: 1.5px solid #fde047 !important;
+        box-shadow: 0 0 8px rgba(250, 204, 21, 0.7) !important;
+    }
+    .day-block.starred::after {
+        content: '★';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 7px;
+        color: #fde047;
+        line-height: 1;
+        pointer-events: none;
+    }
+    .star-moment-btn {
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        color: #94a3b8;
+        font-size: 0.76rem;
+        font-weight: 700;
+        padding: 5px 12px;
+        border-radius: 999px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        font-family: inherit;
+        user-select: none;
+    }
+    .star-moment-btn:hover {
+        background: rgba(255, 255, 255, 0.12);
+        color: #f1f5f9;
+        transform: translateY(-1px);
+    }
+    .star-moment-btn.active {
+        background: rgba(234, 179, 8, 0.18);
+        border-color: rgba(250, 204, 21, 0.7);
+        color: #fde047;
+        box-shadow: 0 0 14px rgba(234, 179, 8, 0.35);
+    }
+    .star-moment-btn.active .star-icon {
+        filter: drop-shadow(0 0 5px #fde047);
+    }
+
+    /* =========================================
+       MEMSTORE WRAPPED (SPOTIFY-STYLE STORY MODE)
+       ========================================= */
+    .wrapped-overlay {
+        position: fixed;
+        inset: 0;
+        background: radial-gradient(circle at 15% 15%, rgba(99, 102, 241, 0.4), transparent 45%),
+                    radial-gradient(circle at 85% 85%, rgba(236, 72, 153, 0.35), transparent 45%),
+                    radial-gradient(circle at 50% 50%, rgba(14, 165, 233, 0.18), transparent 60%),
+                    #020617;
+        z-index: 10000;
+        display: flex;
+        flex-direction: column;
+        padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+        box-sizing: border-box;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.35s ease;
+        user-select: none;
+        overflow: hidden;
+    }
+    .wrapped-overlay.active {
+        opacity: 1;
+        pointer-events: all;
+    }
+    .wrapped-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 16px;
+        position: relative;
+        z-index: 25;
+    }
+    .wrapped-bars {
+        display: flex;
+        flex: 1;
+        gap: 3px;
+        height: 3px;
+    }
+    .wrapped-bar {
+        flex: 1;
+        background: rgba(255, 255, 255, 0.25);
+        border-radius: 999px;
+        overflow: hidden;
+        height: 100%;
+        position: relative;
+    }
+    .wrapped-bar-fill {
+        background: #fff;
+        height: 100%;
+        width: 0%;
+        box-shadow: 0 0 8px #fff;
+    }
+    .wrapped-bar-fill.done {
+        width: 100%;
+    }
+    .wrapped-ctrl-btn {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        color: #fff;
+        border-radius: 999px;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 0.88rem;
+        transition: background 0.2s;
+    }
+    .wrapped-ctrl-btn:hover {
+        background: rgba(255, 255, 255, 0.25);
+    }
+    .wrapped-tap-left, .wrapped-tap-right {
+        position: absolute;
+        top: 60px;
+        bottom: 0;
+        width: 40%;
+        z-index: 15;
+        cursor: pointer;
+    }
+    .wrapped-tap-left { left: 0; }
+    .wrapped-tap-right { right: 0; width: 60%; }
+    .wrapped-content {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        z-index: 10;
+        max-width: 480px;
+        width: 100%;
+        margin: 0 auto;
+        text-align: center;
+    }
+    .wrapped-slide {
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        animation: wrappedFadeIn 0.38s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .wrapped-slide.active {
+        display: flex;
+    }
+    @keyframes wrappedFadeIn {
+        from { opacity: 0; transform: translateY(12px) scale(0.98); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .wrapped-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 14px;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        font-weight: 800;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        color: #e2e8f0;
+        margin-bottom: 12px;
+        backdrop-filter: blur(8px);
+    }
+    .wrapped-hero-title {
+        font-size: 2.05rem;
+        font-weight: 800;
+        line-height: 1.15;
+        margin: 0 0 12px 0;
+        color: #fff;
+    }
+    .wrapped-gradient-text {
+        background: linear-gradient(135deg, #38bdf8, #a855f7, #ec4899);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    .wrapped-stats-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        width: 100%;
+        margin-top: 14px;
+    }
+    .wrapped-stat-card {
+        background: rgba(30, 41, 59, 0.5);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 18px;
+        padding: 18px 12px;
+        backdrop-filter: blur(12px);
+    }
+    .wrapped-stat-val {
+        font-size: 2rem;
+        font-weight: 800;
+        background: linear-gradient(135deg, #f8fafc, #cbd5e1);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    .wrapped-stat-lbl {
+        font-size: 0.75rem;
+        color: #94a3b8;
+        font-weight: 600;
+        margin-top: 4px;
+    }
+    .wrapped-memory-box {
+        background: rgba(30, 41, 59, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 20px;
+        padding: 20px 18px;
+        backdrop-filter: blur(14px);
+        width: 100%;
+        box-sizing: border-box;
+        text-align: left;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+    }
+    .wrapped-memory-date {
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: #818cf8;
+        margin-bottom: 8px;
+    }
+    .wrapped-memory-text {
+        font-size: 1rem;
+        font-weight: 500;
+        line-height: 1.45;
+        color: #f8fafc;
+        font-style: italic;
+    }
+
+    /* =========================================
+       MEMSTORE WRAPPED DEV STUDIO MODAL
+       ========================================= */
+    .studio-modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(2, 6, 23, 0.88);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        z-index: 10050;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        box-sizing: border-box;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.25s ease;
+    }
+    .studio-modal-overlay.active {
+        opacity: 1;
+        pointer-events: all;
+    }
+    .studio-modal-card {
+        background: #0f172a;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 24px;
+        box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.8), 0 0 40px rgba(99, 102, 241, 0.15);
+        max-width: 540px;
+        width: 100%;
+        max-height: 90vh;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        padding: 24px;
+        box-sizing: border-box;
+        text-align: left;
+        color: #f8fafc;
+        animation: studioScaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes studioScaleUp {
+        from { transform: scale(0.95); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
+    }
+    .studio-modal-card::-webkit-scrollbar { width: 6px; }
+    .studio-modal-card::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); }
+    .studio-modal-card::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 4px; }
+    .studio-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 6px;
+    }
+    .studio-title-wrap {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .studio-title {
+        font-size: 1.25rem;
+        font-weight: 800;
+        margin: 0;
+        background: linear-gradient(135deg, #38bdf8, #818cf8);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    .studio-badge {
+        font-size: 0.65rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        background: rgba(99, 102, 241, 0.2);
+        color: #818cf8;
+        border: 1px solid rgba(99, 102, 241, 0.4);
+        padding: 2px 7px;
+        border-radius: 999px;
+    }
+    .studio-sub {
+        font-size: 0.85rem;
+        color: #94a3b8;
+        margin: 0 0 16px 0;
+        line-height: 1.4;
+    }
+    .studio-section-label {
+        font-size: 0.72rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        color: #64748b;
+        margin: 14px 0 8px 0;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .studio-preset-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-bottom: 14px;
+    }
+    .studio-chip {
+        background: rgba(30, 41, 59, 0.8);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        color: #cbd5e1;
+        padding: 6px 12px;
+        border-radius: 999px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    .studio-chip:hover {
+        background: rgba(99, 102, 241, 0.25);
+        border-color: rgba(99, 102, 241, 0.6);
+        color: #fff;
+        transform: translateY(-1px);
+    }
+    .studio-chip.active {
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.4), rgba(236, 72, 153, 0.3));
+        border-color: #818cf8;
+        color: #fff;
+        box-shadow: 0 0 12px rgba(99, 102, 241, 0.3);
+    }
+    .studio-form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+    .studio-col-full { grid-column: 1 / -1; }
+    .studio-field {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+    .studio-field label {
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .studio-input, .studio-select, .studio-textarea {
+        background: rgba(15, 23, 42, 0.8);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        color: #f8fafc;
+        border-radius: 10px;
+        padding: 9px 12px;
+        font-family: inherit;
+        font-size: 0.85rem;
+        outline: none;
+        transition: border-color 0.2s, box-shadow 0.2s;
+        box-sizing: border-box;
+        width: 100%;
+    }
+    .studio-input:focus, .studio-select:focus, .studio-textarea:focus {
+        border-color: #818cf8;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
+    }
+    .studio-textarea { resize: vertical; min-height: 54px; }
+    .studio-actions-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-top: 20px;
+        padding-top: 16px;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .studio-btn-launch {
+        background: linear-gradient(135deg, #6366f1, #ec4899);
+        color: #fff;
+        border: none;
+        border-radius: 14px;
+        padding: 13px 18px;
+        font-weight: 800;
+        font-size: 0.95rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.5);
+        transition: transform 0.2s, opacity 0.2s;
+    }
+    .studio-btn-launch:hover { transform: translateY(-1px); opacity: 0.95; }
+    .studio-row-btns {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+    }
+    .studio-btn-sub {
+        background: rgba(30, 41, 59, 0.8);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        color: #e2e8f0;
+        border-radius: 12px;
+        padding: 10px 14px;
+        font-weight: 600;
+        font-size: 0.82rem;
+        cursor: pointer;
+        transition: background 0.2s;
+        text-align: center;
+    }
+    .studio-btn-sub:hover { background: rgba(51, 65, 85, 0.9); color: #fff; }
+    .studio-btn-danger-sub {
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        color: #fca5a5;
+    }
+    .studio-btn-danger-sub:hover { background: rgba(239, 68, 68, 0.25); color: #fee2e2; }
+
+</style>
+</head>
+<body>
+<div id="connBanner" class="conn-banner" role="status" aria-live="polite">
+    <div class="conn-dot"></div>
+    <div class="conn-banner-text" id="connBannerText"></div>
+</div>
+<div id="screen-onboard" class="screen">
+        <div class="top-bar" style="justify-content: flex-end; margin-bottom: 0;">
+            <button class="menu-btn" style="flex: 0 0 auto; padding: 8px 12px;" onclick="shareApp()" title="Share App">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+            </button>
+        </div>
+        <div style="margin: 20px 0;">
+            <img src="logo.png" alt="MemStore Logo" style="width: 80px; height: 80px; border-radius: 18px; box-shadow: 0 0 20px var(--accent-glow);">
+            <h1 style="margin-top: 10px;">MemStore</h1>
+        </div>
+        <p class="subtitle">A 365-day daily journal.<br>Rule #1: Write at least <b>one good thing</b> that happened today.<br>Rule #2: You can't read past entries until the year is up.</p>
+
+        <!-- DEV WRAPPED PROMINENT BANNER -->
+        <div style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.25), rgba(236, 72, 153, 0.25)); border: 1.5px solid rgba(99, 102, 241, 0.5); border-radius: 16px; padding: 18px; margin: 20px 0; text-align: left; box-shadow: 0 10px 25px -5px rgba(99,102,241,0.3);">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                <span style="font-weight: 800; font-size: 1.05rem; color: #fff; display: flex; align-items: center; gap: 8px;">✨ MemStore Wrapped (12-Slide Story)</span>
+                <span style="font-size: 0.7rem; font-weight: 800; text-transform: uppercase; background: #6366f1; color: #fff; padding: 3px 9px; border-radius: 999px; letter-spacing: 0.5px;">12 SLIDES</span>
+            </div>
+            <p style="margin: 0 0 14px 0; font-size: 0.88rem; color: #cbd5e1; line-height: 1.45;">
+                Relive your year with Day 1 beginnings, streaks, word volume, persona, peak seasons, and 3 rich throwback chapters!
+            </p>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+                <button class="primary-btn" onclick="launchWrappedWithWarpIntro(false)" style="padding: 13px; font-size: 0.95rem; font-weight: 800; background: linear-gradient(135deg, #6366f1, #ec4899); border: none; box-shadow: 0 4px 15px rgba(236,72,153,0.3);">
+                    ✨ Play My Wrapped (Real Data)
+                </button>
+                <div style="display: flex; gap: 8px;">
+                    <button class="secondary-btn" onclick="openWrappedStudio()" style="flex: 1; padding: 10px; font-size: 0.82rem; font-weight: 700;">
+                        🛠️ Dev Studio Form
+                    </button>
+                    <button class="secondary-btn" onclick="launchWrappedWithWarpIntro(true)" style="flex: 1; padding: 10px; font-size: 0.82rem;">
+                        🎭 Sample Demo
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        
+        <div style="background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 12px; padding: 14px; margin-bottom: 24px;">
+            <p style="margin: 0; font-size: 0.9rem; color: #a5b4fc;">🛡️ <b>Privacy First:</b> Your memories never leave your device unencrypted. </p>
+        </div>
+
+        <!-- 1. ACTIVE VAULT (Moved to top) -->
+        <div id="activeVaultTracker" style="display: none; background: var(--card); padding: 22px; border-radius: 16px; margin-bottom: 16px; border: 1px solid rgba(255,255,255,0.1);">
+            <h3 style="margin: 0 0 15px 0; font-size: 1.2rem; color: var(--accent);">Current Journal</h3>
+            <div class="progress-container" style="margin-bottom: 8px;"><div class="progress-bar" id="homeProgressBar"></div></div>
+            <div class="progress-text" id="homeProgressText" style="text-align: center; margin-bottom: 18px;">Day X of 365</div>
+            <button class="primary-btn" onclick="openActiveVault()">Enter Vault</button>
+        </div>
+        
+        <!-- 2. ARCHIVES -->
+        <div id="previousYearsHome" style="display: none; margin-bottom: 24px;">
+            <button class="secondary-btn" onclick="showArchiveHome()">View Previous Years</button>
+        </div>
+
+        <!-- 3. DATA MANAGEMENT (Cleaned up) -->
+        <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px; margin-bottom: 24px;">
+            <p style="font-size: 0.9rem; color: var(--muted); margin-bottom: 12px;">Cloud Sync & Local Backup</p>
+            
+            <button class="secondary-btn" id="btnGoogleSync" onclick="handleAuthClick()" style="margin-bottom: 12px;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                Sign in (to access your memories remotely!) 
+            </button>
+
+            <div style="display: flex; gap: 10px;">
+                <button class="secondary-btn" onclick="exportBackup()" style="padding: 12px; font-size: 0.9rem; flex: 1;">
+                    Export Backup
+                </button>
+                <label class="secondary-btn" style="padding: 12px; font-size: 0.9rem; cursor: pointer; text-align: center; flex: 1;">
+                    Restore Backup
+                    <input type="file" accept=".json" style="display: none;" onchange="importBackup(event)">
+                </label>
+            </div>
+        </div>
+
+        <!-- 3.5 APP LOCK -->
+        <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px; margin-bottom: 24px;">
+            <p style="font-size: 0.9rem; color: var(--muted); margin-bottom: 12px;">Privacy</p>
+            <div class="lock-toggle-row">
+                <div class="lock-toggle-label">
+                    <div class="lock-toggle-title">App Lock</div>
+                    <div class="lock-toggle-sub" id="lockToggleSub">Require Face ID / fingerprint to open MemStore</div>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" id="lockToggleInput" onchange="onLockToggle(this)">
+                    <span class="switch-slider"></span>
+                </label>
+            </div>
+            <div id="lockSubTriggers" style="display:none; flex-direction: column; gap: 10px; margin-top: 14px; padding-left: 4px;">
+                <div class="lock-toggle-row">
+                    <div class="lock-toggle-label">
+                        <div class="lock-toggle-sub" style="color: var(--text);">When opening the app</div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="lockOnOpenInput" onchange="onLockSubToggle('memLockOnOpen', this)">
+                        <span class="switch-slider"></span>
+                    </label>
+                </div>
+                <div class="lock-toggle-row">
+                    <div class="lock-toggle-label">
+                        <div class="lock-toggle-sub" style="color: var(--text);">When accessing previous memories</div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="lockOnArchivesInput" onchange="onLockSubToggle('memLockOnArchives', this)">
+                        <span class="switch-slider"></span>
+                    </label>
+                </div>
+                <div class="lock-toggle-row">
+                    <div class="lock-toggle-label">
+                        <div class="lock-toggle-sub" style="color: var(--text);">When re-accessing today's entry</div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="lockOnReeditInput" onchange="onLockSubToggle('memLockOnReedit', this)">
+                        <span class="switch-slider"></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. DANGER ZONE (Moved to bottom) -->
+        <button id="btnBeginExperiment" class="primary-btn" onclick="nav('screen-setup')">Begin the Experiment</button>
+        
+        <!-- 5. DEV HUB -->
+        <a href="https://jenishestmoizavut.github.io/jenish.one" target="_blank" class="secondary-btn-link">
+            Visit the Developer's Hub
+        </a>
+    </div>	  <div id="screen-setup" class="screen">
+<div class="top-bar" style="justify-content: flex-start; margin-bottom: 20px;">
+    <button class="menu-btn" style="flex: 0 0 auto; padding: 8px 16px;" onclick="checkAppState()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+        Back
+    </button>
+</div>
+        <h1>When does year zero start?</h1>
+        <p class="subtitle">Choose your timeline.</p>
+        <div class="radio-group">
+            <label class="radio-label"><input type="radio" name="startOption" value="today" checked onclick="toggleCustomDate(false)"> Start Today</label>
+<label class="radio-label" id="newYearLabel"><input type="radio" name="startOption" value="newyear" onclick="toggleCustomDate(false)"> Start from New Year (1st Jan) </label>
+            <label class="radio-label" style="flex-wrap: wrap;"><input type="radio" name="startOption" value="custom" onclick="toggleCustomDate(true)"> Custom / Birthday <input type="date" id="customDateInput"></label>
+        </div>
+<div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 12px; padding: 14px; margin-bottom: 24px; text-align: left;">
+    <p style="margin: 0; font-size: 0.85rem; color: #fca5a5; line-height: 1.4;">
+        ⚠️ <b>Important:</b> Your memories are stored directly in this browser's <b>IndexedDB</b>. Clearing your browser data, "Resetting" the app, or deleting the site's storage will wipe your vault forever. <b>Do not do it!</b>
+    </p>
+</div>
+        <button class="primary-btn" onclick="initializeVault()">Lock It In</button>
+    </div>
+
+    <div id="screen-main" class="screen">
+        <div class="top-bar">
+            <h2 style="margin:0; font-size:1.5rem;">The Vault</h2>
+            <div class="theme-picker" title="Pick a color theme">
+                <input type="color" id="colorPicker" value="#6366f1" oninput="applyCustomColor(this.value)">
+            </div>
+        </div>
+
+        <div class="progress-container"><div class="progress-bar" id="progressBar"></div></div>
+        <div class="progress-text" id="progressText">Day 0 of 365</div>
+
+        <div class="grid-wrapper">
+            <div class="calendar-grid" id="calendarGrid"></div>
+            <p style="font-size: 0.75rem; color: var(--muted); margin-top: 15px;">Click hollow boxes to backdate. Seal them when ready.</p>
+        </div>
+
+        <div class="input-wrap">
+            <div id="animOverlay" class="anim-overlay">
+                <div class="lock-container">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent); filter: drop-shadow(0 0 10px var(--accent-glow));">
+                        <path class="shackle" d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                    </svg>
+                </div>
+                <div class="anim-text">Sealed. See you next year.</div>
+            </div>
+
+            <div id="editorState">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                    <span class="active-date-label" id="activeDateLabel" style="margin-bottom: 0;">Today's Entry</span>
+                    <button type="button" id="starMomentBtn" class="star-moment-btn" onclick="toggleStarMoment()" title="Flag as Golden Moment for Wrapped">
+                        <span class="star-icon">⭐</span>
+                        <span class="star-label">Golden Moment</span>
+                    </button>
+                </div>
+                <textarea id="entryText" placeholder="What is one good thing that happened?..." oninput="autoSaveDraft()"></textarea>
+                <div class="editor-bottom">
+                    <div class="save-status" id="saveStatus">Draft</div>
+                    <button class="seal-btn" onclick="sealEntry()">Seal</button>
+                </div>
+            </div>
+
+            <div id="sealedState" class="sealed-ui" style="display: none;">
+                <svg class="sealed-icon-static" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                <div class="sealed-title">Sealed</div>
+                <div class="sealed-date" id="sealedDateLabel">Memory as of Apr 26, 2026</div>
+                <div class="sealed-time" id="sealedTimeLabel">20:27:34</div>
+                <div style="margin: 10px 0 6px 0;">
+                    <button type="button" id="sealedStarBtn" class="star-moment-btn" onclick="toggleStarMoment()" title="Flag as Golden Moment for Wrapped">
+                        <span class="star-icon">⭐</span>
+                        <span class="star-label">Golden Moment</span>
+                    </button>
+                </div>
+                <div id="unsealContainer" style="display: none;"><button class="unseal-btn" onclick="unsealToday()">Edit before the day ends!</button></div>
+            </div>
+        </div><div id="finalPrompt" class="final-prompt">
+            <div class="final-prompt-title">The final seal is ready.</div>
+            <p class="final-prompt-copy">Your last entry is locked. Step through when you are ready to open the year.</p>
+            <button class="primary-btn" onclick="enterTimeCapsule()">Open Your Year Recap</button>
+        </div>
+
+        <div class="home-menu-bar">
+            <button class="menu-btn" onclick="checkAppState()" title="Return to Main Menu">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                Home
+            </button>
+            <button class="menu-btn" onclick="openEditor(getDateKey())" title="Return to today's entry">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                Today
+            </button>
+            <button class="menu-btn" id="btnArchivesMenu" style="display: none;" onclick="showArchiveHome()" title="View previous capsules">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8v13H3V8M1 3h22v5H1zM10 12h4"></path></svg>
+                Archives
+            </button>
+        </div>
+    </div> <div id="screen-unlocked" class="screen">
+<div class="top-bar" style="justify-content: flex-start; margin-bottom: 20px;">
+    <button class="menu-btn" style="flex: 0 0 auto; padding: 8px 16px;" onclick="checkAppState()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+        Home
+    </button>
+</div>
+        <div id="arrivalPhase">
+            <h1>Timeline Reconstructed.</h1>
+            <p class="subtitle">Compiling your recorded memories...</p>
+            
+            <div class="grid-wrapper" style="margin-bottom: 30px;">
+                <div class="calendar-grid" id="arrivalGrid"></div>
+            </div>
+
+            <button id="stepOutBtn" class="primary-btn" style="display: none; padding: 18px; font-size: 1rem; line-height: 1.4;" onclick="showReaderOptions()">
+                You have reached your destination, step out and relive your best memories - click here
+            </button>
+        </div>
+
+        <div id="readerPhase" style="display: none;">
+            <h1>Year Complete.</h1>
+            <p class="subtitle">Your 365 days of light are revealed.</p>
+            <div class="eoy-options">
+                <button class="primary-btn" onclick="startDayByDay()">Read Day by Day</button>
+                <button class="secondary-btn" onclick="revealRandom()">Pick One Randomly</button>
+            </div>
+            
+                <div id="reader" class="reader-card" style="display: none;">
+                <!-- Fixed Header Flexbox -->
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+                    <div style="display: flex; align-items: baseline; gap: 8px;">
+                        <div class="reader-date" style="margin-bottom: 0;" id="readerDate"></div>
+                        <div id="readerTime" style="color: var(--muted); font-size: 0.85rem; font-family: monospace;"></div>
+                    </div>
+                    <button onclick="shareMemory()" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: var(--text); padding: 6px 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.1)'" title="Share Memory">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+                    </button>
+                </div>
+                
+                <img id="readerImage" class="reader-image" style="display: none;" src="">
+                <div class="reader-entry" id="readerEntry"></div>
+
+                <div class="reader-controls">
+                    <button class="secondary-btn" id="btnReaderPrev" onclick="moveReader(-1)" style="flex: 0 0 50px; padding: 0;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+    </button>
+    
+    <button class="secondary-btn" id="btnReaderRandom" onclick="revealRandom()" style="display: none;">Another Day</button>
+    
+    <!-- Icon for Next -->
+    <button class="secondary-btn" id="btnReaderNext" onclick="moveReader(1)" style="flex: 0 0 50px; padding: 0;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+    </button>
+                </div>
+                <div class="reader-count" id="readerCount"></div>
+            </div>
+            <div id="timeline" class="timeline-view"></div>
+        </div>
+    </div>
+
+    <div id="screen-archive" class="screen">
+<div class="top-bar" style="justify-content: flex-start; margin-bottom: 20px;">
+    <button class="menu-btn" style="flex: 0 0 auto; padding: 8px 16px;" onclick="checkAppState()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+        Back
+    </button>
+</div>
+        <h1>Previous Years</h1>
+        <p class="subtitle">Return to an older year's journal.</p>
+        <div id="archiveList" class="archive-list"></div>
+          </div>
+
+    <div class="dev-gear" title="Dev Switch: Force EOY Warp" onclick="devUnlock()">EOY</div>
+
+    <div id="lockScreen">
+        <svg class="lock-hero-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+        <h1 style="font-size: 1.6rem; margin: 0 0 6px 0;">MemStore is locked</h1>
+        <p class="subtitle" id="lockScreenSub" style="margin-bottom: 10px;">Unlock to view your memories</p>
+
+        <div id="lockBiometricArea" style="display:none; width: 100%; max-width: 280px;">
+            <button class="primary-btn" onclick="attemptBiometricUnlock()">Unlock with Face ID / Fingerprint</button>
+            <button class="secondary-btn" style="margin-top: 12px;" onclick="attemptBiometricUnlock()">Try Again</button>
+        </div>
+
+        <div class="lock-error" id="lockError"></div>
+    </div>
+
+    <div id="warpOverlay" class="warp-overlay">
+    <div class="core-pulse"></div>
+    <div class="warp-core" id="warpCore"></div>
+    <div id="warpMessage" class="warp-message">Initializing...</div>
+    <div class="flash-bang" id="flashBang"></div>
+</div>
+<script defer>
+        // --- INDEXEDDB STORAGE SYSTEM ---
+        const dbName = 'MemStoreDB';
+        const storeName = 'vaults';
+
+        function initDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(dbName, 1);
+                request.onupgradeneeded = (e) => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains(storeName)) {
+                        db.createObjectStore(storeName);
+                    }
+                };
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
+        }
+
+        async function saveToDB(key, data) {
+            const db = await initDB();
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(storeName, 'readwrite');
+                tx.objectStore(storeName).put(data, key);
+                tx.oncomplete = () => resolve();
+                tx.onerror = () => reject();
+            });
+        }
+
+        async function loadFromDB(key) {
+            const db = await initDB();
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(storeName, 'readonly');
+                const request = tx.objectStore(storeName).get(key);
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject();
+            });
+        }
+
+        // --- APP STATE ---
+        let memData = null;
+        let archives = [];
+        let activeCapsule = null;
+        let activeEditDate = null;
+        let readerDates = [];
+        let readerIndex = 0;
+        let saveTimeout;
+        let audioCtx;
+
+        let savedColor = localStorage.getItem('memCustomColor') || '#6366f1';
+        document.getElementById('colorPicker').value = savedColor;
+        applyCustomColor(savedColor);
+
+        // --- CONNECTIVITY / OFFLINE OVERLAY ---
+        // MemStore's journal is fully local-first (IndexedDB), so losing connection never
+        // blocks writing or reading entries. This overlay just keeps the user informed about
+        // what's happening with cloud sync, and makes sure any changes made offline get pushed
+        // to Firestore automatically the moment connectivity returns.
+        let connHideTimeout;
+        let wasOfflineForSync = false;
+
+        function showConnBanner(state, text) {
+            const banner = document.getElementById('connBanner');
+            const textEl = document.getElementById('connBannerText');
+            clearTimeout(connHideTimeout);
+            banner.classList.remove('online', 'offline');
+            banner.classList.add(state, 'show');
+            textEl.innerHTML = text;
+        }
+
+        function hideConnBanner(delay = 0) {
+            clearTimeout(connHideTimeout);
+            connHideTimeout = setTimeout(() => {
+                document.getElementById('connBanner').classList.remove('show');
+            }, delay);
+        }
+
+        function handleGoneOffline() {
+            wasOfflineForSync = true;
+            showConnBanner('offline', `<b>You're offline.</b> <span>MemStore still works — entries save to this device and will sync automatically when you're back online.</span>`);
+            // Stays visible the whole time offline; no auto-hide.
+        }
+
+        async function handleBackOnline() {
+            const isSignedIn = !!(auth && auth.currentUser);
+            if (wasOfflineForSync && isSignedIn) {
+                showConnBanner('online', `<b>Back online.</b> <span>Syncing your memories to the cloud...</span>`);
+                try {
+                    await saveMemoriesToCloud();
+                    showConnBanner('online', `<b>Back online.</b> <span>Your memories are synced.</span>`);
+                } catch (e) {
+                    showConnBanner('online', `<b>Back online.</b> <span>We'll retry syncing shortly.</span>`);
+                }
+            } else if (wasOfflineForSync) {
+                showConnBanner('online', `<b>Back online.</b> <span>Sign in any time to back up your entries to the cloud.</span>`);
+            } else {
+                // Came online without ever having shown an offline banner this session (e.g. first load) - stay silent.
+                wasOfflineForSync = false;
+                return;
+            }
+            wasOfflineForSync = false;
+            hideConnBanner(3200);
+        }
+
+        function initConnectivityWatcher() {
+            window.addEventListener('offline', handleGoneOffline);
+            window.addEventListener('online', handleBackOnline);
+            // If the app happens to load while already offline, let the user know right away.
+            if (!navigator.onLine) handleGoneOffline();
+        }
+
+        // --- APP LOCK (optional, off by default) ---
+        // Biometrics go through the WebAuthn platform authenticator (Face ID / Touch ID /
+        // Windows Hello / Android fingerprint). Everything stays on-device: no server round trip,
+        // no memory content is ever touched by this - it's purely a gate in front of the UI.
+        // Biometric-only, on purpose: there's no PIN/recovery flow built yet, so a PIN fallback
+        // would just be a way to get locked out. App Lock is simply unavailable on devices/
+        // browsers that don't support a platform authenticator.
+        const LOCK_ENABLED_KEY = 'memLockEnabled';
+        const LOCK_CRED_KEY = 'memLockCredId';
+        // Granular triggers - all default ON once App Lock is turned on, individually toggleable after.
+        const LOCK_ON_OPEN_KEY = 'memLockOnOpen';
+        const LOCK_ON_ARCHIVES_KEY = 'memLockOnArchives';
+        const LOCK_ON_REEDIT_KEY = 'memLockOnReedit';
+
+        function isLockOnOpenEnabled() { return localStorage.getItem(LOCK_ON_OPEN_KEY) !== 'false'; }
+        function isLockOnArchivesEnabled() { return localStorage.getItem(LOCK_ON_ARCHIVES_KEY) !== 'false'; }
+        function isLockOnReeditEnabled() { return localStorage.getItem(LOCK_ON_REEDIT_KEY) !== 'false'; }
+
+        let lockResolve = null;
+
+        function isLockEnabled() {
+            // Safety net: App Lock now requires a registered biometric credential (no PIN
+            // fallback exists anymore). If it was left on from before this change without
+            // a credential on file, treat it as off rather than locking anyone out.
+            if (localStorage.getItem(LOCK_ENABLED_KEY) !== 'true') return false;
+            if (!localStorage.getItem(LOCK_CRED_KEY)) {
+                localStorage.removeItem(LOCK_ENABLED_KEY);
+                return false;
+            }
+            return true;
+        }
+
+        async function platformAuthAvailable() {
+            try {
+                return !!(window.PublicKeyCredential &&
+                    PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable &&
+                    await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable());
+            } catch { return false; }
+        }
+
+        async function registerBiometric() {
+            const challenge = crypto.getRandomValues(new Uint8Array(32));
+            const userId = crypto.getRandomValues(new Uint8Array(16));
+            const cred = await navigator.credentials.create({
+                publicKey: {
+                    challenge,
+                    rp: { name: 'MemStore' },
+                    user: { id: userId, name: 'memstore-vault', displayName: 'MemStore Vault' },
+                    pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
+                    authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required', requireResidentKey: false },
+                    timeout: 60000
+                }
+            });
+            if (!cred) throw new Error('No credential created');
+            localStorage.setItem(LOCK_CRED_KEY, bufferToBase64(cred.rawId));
+        }
+
+        async function verifyBiometric() {
+            const credId = localStorage.getItem(LOCK_CRED_KEY);
+            if (!credId) throw new Error('No biometric registered');
+            const challenge = crypto.getRandomValues(new Uint8Array(32));
+            const assertion = await navigator.credentials.get({
+                publicKey: {
+                    challenge,
+                    allowCredentials: [{ id: base64ToBuffer(credId), type: 'public-key' }],
+                    userVerification: 'required',
+                    timeout: 60000
+                }
+            });
+            return !!assertion;
+        }
+
+        // --- Settings toggle (onboard screen) ---
+        async function onLockToggle(checkbox) {
+            if (checkbox.checked) {
+                checkbox.checked = false; // don't flip visually until setup actually completes
+                await runLockSetup();
+            } else {
+                if (!confirm('Turn off App Lock? Anyone who opens this browser will be able to read your memories.')) {
+                    checkbox.checked = true;
+                    return;
+                }
+                localStorage.removeItem(LOCK_ENABLED_KEY);
+                localStorage.removeItem(LOCK_CRED_KEY);
+                localStorage.removeItem(LOCK_ON_OPEN_KEY);
+                localStorage.removeItem(LOCK_ON_ARCHIVES_KEY);
+                localStorage.removeItem(LOCK_ON_REEDIT_KEY);
+                refreshLockToggleUI();
+            }
+        }
+
+        function refreshLockToggleUI() {
+            const input = document.getElementById('lockToggleInput');
+            const sub = document.getElementById('lockToggleSub');
+            if (!input) return;
+            const on = isLockEnabled();
+            input.checked = on;
+            sub.textContent = on
+                ? 'Enabled - Face ID / fingerprint is required to open MemStore'
+                : 'Require Face ID / fingerprint to open MemStore';
+
+            const subRow = document.getElementById('lockSubTriggers');
+            if (subRow) {
+                subRow.style.display = on ? 'flex' : 'none';
+                if (on) {
+                    document.getElementById('lockOnOpenInput').checked = isLockOnOpenEnabled();
+                    document.getElementById('lockOnArchivesInput').checked = isLockOnArchivesEnabled();
+                    document.getElementById('lockOnReeditInput').checked = isLockOnReeditEnabled();
+                }
+            }
+        }
+
+        function onLockSubToggle(key, checkbox) {
+            localStorage.setItem(key, checkbox.checked ? 'true' : 'false');
+        }
+
+        async function runLockSetup() {
+            // Biometric-only: no PIN fallback exists, so App Lock requires a working
+            // platform authenticator (Face ID / Touch ID / Windows Hello / fingerprint).
+            if (!(await platformAuthAvailable())) {
+                alert("Your device or browser doesn't support Face ID / fingerprint unlock, so App Lock isn't available right now.");
+                return;
+            }
+            if (!confirm('This will require Face ID / fingerprint to open MemStore. Continue?')) return;
+
+            try {
+                await registerBiometric();
+            } catch (e) {
+                console.warn('Biometric registration failed or was cancelled:', e);
+                alert("Couldn't set up Face ID / fingerprint (cancelled or not available). App Lock was not enabled.");
+                return;
+            }
+
+            localStorage.setItem(LOCK_ENABLED_KEY, 'true');
+            refreshLockToggleUI();
+            alert('App Lock is on. Unlock with Face ID / fingerprint.');
+        }
+
+        // --- The actual unlock gate shown at boot ---
+        function showLockScreen() {
+            return new Promise(async (resolve) => {
+                lockResolve = () => {
+                    document.getElementById('lockScreen').classList.remove('active');
+                    resolve();
+                };
+                document.getElementById('lockScreen').classList.add('active');
+                document.getElementById('lockScreenSub').textContent = 'Unlock to view your memories';
+                document.getElementById('lockError').textContent = '';
+
+                document.getElementById('lockBiometricArea').style.display = 'block';
+                attemptBiometricUnlock(); // prompt immediately
+            });
+        }
+
+        // Reusable re-auth gate for sensitive actions beyond app boot (viewing archives,
+        // re-opening a sealed entry). If App Lock isn't enabled, this is a no-op that
+        // resolves immediately - it never introduces a barrier the user didn't opt into.
+        function requireReauth(reasonText, subKeyCheck) {
+            if (!isLockEnabled()) return Promise.resolve(true);
+            if (subKeyCheck && !subKeyCheck()) return Promise.resolve(true);
+            return new Promise(async (resolve) => {
+                lockResolve = () => {
+                    document.getElementById('lockScreen').classList.remove('active');
+                    resolve(true);
+                };
+                document.getElementById('lockScreen').classList.add('active');
+                document.getElementById('lockScreenSub').textContent = reasonText || 'Unlock to view your memories';
+                document.getElementById('lockError').textContent = '';
+
+                document.getElementById('lockBiometricArea').style.display = 'block';
+                attemptBiometricUnlock();
+            });
+        }
+
+        async function attemptBiometricUnlock() {
+            document.getElementById('lockError').textContent = '';
+            try {
+                const ok = await verifyBiometric();
+                if (ok) lockResolve();
+            } catch (e) {
+                console.warn('Biometric unlock failed:', e);
+                document.getElementById('lockError').textContent = 'Biometric check failed or was cancelled.';
+            }
+        }
+
+        async function bootApp() {
+            memData = await loadFromDB('activeVault');
+            archives = await loadFromDB('archives') || [];
+
+            if (!memData) {
+                const oldV5 = localStorage.getItem('memStoreV5') || localStorage.getItem('memStoreV6');
+                if (oldV5) {
+                    memData = JSON.parse(oldV5);
+                    await saveToDB('activeVault', memData);
+                }
+            }
+            if (archives.length === 0) {
+                const oldArchives = localStorage.getItem('memStoreArchives');
+                if (oldArchives) {
+                    archives = JSON.parse(oldArchives);
+                    await saveToDB('archives', archives);
+                }
+            }
+
+            activeCapsule = memData;
+            refreshPreviousYearsButton();
+            refreshLockToggleUI();
+
+            if (isLockEnabled() && isLockOnOpenEnabled()) {
+                await showLockScreen();
+            }
+            checkAppState(); 
+
+            // Background-load Firebase after the journal is already interactive, so a
+            // previously-signed-in user's cloud sync resumes automatically without ever
+            // delaying the initial render.
+            loadFirebaseSDK().catch(e => console.warn('Cloud sync unavailable:', e));
+        }
+
+        function checkAppState() {
+            nav('screen-onboard'); 
+            
+            const currentYear = new Date().getFullYear();
+            const nyLabel = document.getElementById('newYearLabel');
+            if (nyLabel) {
+                nyLabel.innerHTML = `<input type="radio" name="startOption" value="newyear" onclick="toggleCustomDate(false)"> Start from New Year (Jan 1, ${currentYear})`;
+            }
+
+            const tracker = document.getElementById('activeVaultTracker');
+            const beginBtn = document.getElementById('btnBeginExperiment');
+
+            if (memData) {
+                if (!memData.drafts) memData.drafts = {};
+                if (!memData.timestamps) memData.timestamps = {};
+                
+                tracker.style.display = 'block';
+                
+                beginBtn.textContent = 'Start New Vault (Deletes Current)';
+                beginBtn.className = 'danger-zone-btn'; 
+                beginBtn.style.marginTop = '12px';
+                beginBtn.onclick = confirmNewVault; 
+
+                const start = new Date(`${memData.startDate}T00:00:00`);
+                const now = new Date(`${getDateKey()}T00:00:00`);
+                const diffTime = now - start;
+                const daysPassed = Math.max(0, Math.floor(diffTime / (1000 * 60 * 60 * 24))) + 1;
+                const progress = Math.min((daysPassed / 365) * 100, 100);
+
+                document.getElementById('homeProgressBar').style.width = `${progress}%`;
+                document.getElementById('homeProgressText').innerText = `Day ${Math.min(daysPassed, 365)} of 365`;
+            } else {
+                tracker.style.display = 'none';
+                beginBtn.textContent = 'Begin the Experiment';
+                beginBtn.className = 'primary-btn';
+                beginBtn.style.marginTop = '0';
+                beginBtn.onclick = () => nav('screen-setup');
+            }
+        }
+
+        // Firebase Config
+        const firebaseConfig = {
+          apiKey: "AIzaSyCJreQ92qmELHwVwx5JdXok-9m1Wnwb3cg",
+          authDomain: "memstore-f6312.firebaseapp.com",
+          projectId: "memstore-f6312",
+          storageBucket: "memstore-f6312.appspot.com",
+          messagingSenderId: "1013833560351",
+          appId: "1:1013833560351:web:5c14ba8ca722deb1ae802a",
+          measurementId: "G-KVGD7JCDYL"
+        };
+
+        // Cloud sync (Firebase) is entirely optional and loaded on demand, so a slow or
+        // blocked network never delays opening the local journal. `auth`/`db` stay undefined
+        // until loadFirebaseSDK() resolves; anything that touches them awaits it first.
+        let auth, db, analytics;
+        let firebaseLoadPromise = null;
+
+        function loadScript(src) {
+            return new Promise((resolve, reject) => {
+                const s = document.createElement('script');
+                s.src = src;
+                s.onload = resolve;
+                s.onerror = () => reject(new Error(`Failed to load ${src}`));
+                document.head.appendChild(s);
+            });
+        }
+
+        function loadFirebaseSDK() {
+            if (firebaseLoadPromise) return firebaseLoadPromise;
+            firebaseLoadPromise = (async () => {
+                const base = 'https://www.gstatic.com/firebasejs/10.8.0/';
+                await loadScript(base + 'firebase-app-compat.js');
+                await Promise.all([
+                    loadScript(base + 'firebase-auth-compat.js'),
+                    loadScript(base + 'firebase-firestore-compat.js'),
+                    loadScript(base + 'firebase-analytics-compat.js'),
+                ]);
+                firebase.initializeApp(firebaseConfig);
+                auth = firebase.auth();
+                db = firebase.firestore();
+                analytics = firebase.analytics();
+                attachAuthStateListener();
+                return true;
+            })();
+            return firebaseLoadPromise;
+        }
+
+        function openActiveVault() {
+            nav('screen-main');
+            renderApp();
+        }
+        
+        function confirmNewVault() {
+            if (confirm("Are you sure? This will permanently delete your current progress and data for this year.")) {
+                nav('screen-setup');
+            }
+        }
+
+        function initializeVault() {
+            if (memData) {
+                if(!confirm("WARNING: Starting a new timeline will permanently overwrite your active vault! Are you absolutely sure?")) return;
+            }
+            
+            const option = document.querySelector('input[name="startOption"]:checked').value;
+            let startDateStr = getDateKey();
+            if (option === 'newyear') startDateStr = `${new Date().getFullYear()}-01-01`;
+            else if (option === 'custom') {
+                const custom = document.getElementById('customDateInput').value;
+                if (!custom) return alert("Please select a date.");
+                startDateStr = custom;
+            }
+
+            memData = { id: Date.now().toString(), startDate: startDateStr, entries: {}, drafts: {}, timestamps: {} };            
+            saveToDB('activeVault', memData); 
+            openActiveVault(); 
+        }
+
+        function playSealSound() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.05);
+        }
+
+        function playWarpSound() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc1 = audioCtx.createOscillator();
+            const osc2 = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            const duration = 6.0; 
+            osc1.type = 'sine';
+            osc2.type = 'sine';
+            osc1.frequency.setValueAtTime(300, audioCtx.currentTime);
+            osc1.frequency.linearRampToValueAtTime(1000, audioCtx.currentTime + duration);
+            osc2.frequency.setValueAtTime(305, audioCtx.currentTime);
+            osc2.frequency.linearRampToValueAtTime(1010, audioCtx.currentTime + duration);
+            gain.gain.setValueAtTime(0, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.2, audioCtx.currentTime + 1.5); 
+            gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + duration);
+            osc1.connect(gain);
+            osc2.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc1.start(); osc2.start();
+            osc1.stop(audioCtx.currentTime + duration); 
+            osc2.stop(audioCtx.currentTime + duration);
+        }
+
+        function applyCustomColor(hex) {
+            const root = document.documentElement;
+            root.style.setProperty('--accent', hex);
+            let r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
+            root.style.setProperty('--accent-glow', `rgba(${r}, ${g}, ${b}, 0.4)`);
+            localStorage.setItem('memCustomColor', hex);
+        }
+
+        function nav(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        function toggleCustomDate(show) { document.getElementById('customDateInput').style.display = show ? 'block' : 'none'; }
+
+        function getDateKey(date = new Date()) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        function addDays(dateStr, days) {
+            const date = new Date(`${dateStr}T00:00:00`);
+            date.setDate(date.getDate() + days);
+            return getDateKey(date);
+        }
+
+        function getFinalDateStr() { return addDays(memData.startDate, 364); }
+
+        function canEnterTimeCapsule() {
+            if (!memData) return false;
+            const finalDateStr = getFinalDateStr();
+            const threshold = new Date(`${finalDateStr}T06:00:00`);
+            return new Date() >= threshold && !!memData.entries[finalDateStr];
+        }
+
+        function updateFinalPrompt() {
+            const prompt = document.getElementById('finalPrompt');
+            if (!prompt) return;
+            prompt.classList.toggle('active', canEnterTimeCapsule());
+        }
+
+        function refreshPreviousYearsButton() { 
+            const prevYearsOnboard = document.getElementById('previousYearsHome');
+            if (prevYearsOnboard) prevYearsOnboard.style.display = archives.length ? 'block' : 'none'; 
+            const btnArchivesMenu = document.getElementById('btnArchivesMenu');
+            if (btnArchivesMenu) btnArchivesMenu.style.display = archives.length ? 'flex' : 'none';
+        }
+
+        function getCapsuleLabel(capsule) {
+            const startYear = new Date(`${capsule.startDate}T00:00:00`).getFullYear();
+            const finalYear = new Date(`${addDays(capsule.startDate, 364)}T00:00:00`).getFullYear();
+            return startYear === finalYear ? `${startYear}` : `${startYear}-${finalYear}`;
+        }
+
+        function archiveCurrentVault() {
+            if (!memData.id) memData.id = Date.now().toString();
+            const snapshot = { ...memData, completedAt: new Date().toISOString(), label: getCapsuleLabel(memData) };
+            archives = archives.filter(capsule => capsule.id !== snapshot.id);
+            archives.unshift(snapshot);
+            saveToDB('archives', archives); 
+            refreshPreviousYearsButton();
+            return snapshot;
+        }
+
+        function renderApp() {
+            const todayStr = getDateKey();
+            const finalDateStr = getFinalDateStr();
+            const start = new Date(`${memData.startDate}T00:00:00`);
+            const now = new Date(`${todayStr}T00:00:00`);
+            const diffTime = now - start;
+            const daysPassed = Math.max(0, Math.floor(diffTime / (1000 * 60 * 60 * 24))) + 1; 
+            const progress = Math.min((daysPassed / 365) * 100, 100);
+            document.getElementById('progressBar').style.width = `${progress}%`;
+            document.getElementById('progressText').innerText = `Day ${Math.min(daysPassed, 365)} of 365`;
+            const grid = document.getElementById('calendarGrid');
+            grid.innerHTML = '';
+            let gridStart = new Date(`${memData.startDate}T00:00:00`);
+            for (let i = 0; i < 365; i++) {
+                const currentBlockDate = new Date(gridStart);
+                currentBlockDate.setDate(gridStart.getDate() + i);
+                const blockDateStr = getDateKey(currentBlockDate);
+                const block = document.createElement('div');
+                block.className = 'day-block';
+                if (blockDateStr > todayStr) block.classList.add('locked');
+                else if (memData.entries[blockDateStr]) { 
+                    block.classList.add('filled'); 
+                    if (memData.starred && memData.starred[blockDateStr]) block.classList.add('starred');
+                    block.onclick = () => openEditor(blockDateStr); 
+                }
+                else if (blockDateStr === todayStr) { block.classList.add('today'); block.onclick = () => openEditor(blockDateStr); }
+                else { block.classList.add('missed'); block.onclick = () => openEditor(blockDateStr); }
+                grid.appendChild(block);
+            }
+            openEditor(daysPassed > 365 ? finalDateStr : todayStr);
+            updateFinalPrompt();
+        }
+
+        function openEditor(dateStr) {
+            activeEditDate = dateStr;
+            const todayStr = getDateKey();
+            const isToday = dateStr === todayStr;
+            const isSealed = !!memData.entries[dateStr];
+            const editorState = document.getElementById('editorState');
+            const sealedState = document.getElementById('sealedState');
+            const unsealContainer = document.getElementById('unsealContainer');
+            if (isSealed) {
+                editorState.style.display = 'none';
+                sealedState.style.display = 'flex';
+                const options = { month: 'short', day: 'numeric', year: 'numeric' };
+                document.getElementById('sealedDateLabel').innerText = `Memory as of ${new Date(dateStr).toLocaleDateString('en-US', options)}`;
+                document.getElementById('sealedTimeLabel').innerText = memData.timestamps[dateStr] || "--:--:--";
+                unsealContainer.style.display = isToday ? 'block' : 'none';
+            } else {
+                editorState.style.display = 'block';
+                sealedState.style.display = 'none';
+                document.getElementById('activeDateLabel').innerText = isToday ? "Today's Entry" : `Backdating: ${dateStr}`;
+                document.getElementById('entryText').value = memData.drafts[dateStr] || '';
+                const lastEditTime = memData.timestamps[dateStr];
+                document.getElementById('saveStatus').innerText = memData.drafts[dateStr] && lastEditTime ? `Draft saved at ${lastEditTime}` : '';
+            }
+        }
+
+        function autoSaveDraft() {
+            if (!activeEditDate) return;
+            const content = document.getElementById('entryText').value.trim();
+            const status = document.getElementById('saveStatus');
+            status.innerText = 'Saving...';
+            clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(() => {
+                const timeStr = new Date().toLocaleTimeString('en-US', { hour12: false });
+                if (content) { memData.drafts[activeEditDate] = content; memData.timestamps[activeEditDate] = timeStr; }
+                else { delete memData.drafts[activeEditDate]; delete memData.timestamps[activeEditDate]; }
+                saveToDB('activeVault', memData); 
+                status.innerText = `Draft saved at ${timeStr}`;
+            }, 500);
+        }
+
+        function sealEntry() {
+            const content = document.getElementById('entryText').value.trim();
+            if (!content) return alert("Write at least one good thing before sealing!");
+            
+            const timeStr = new Date().toLocaleTimeString('en-US', { hour12: false });
+            memData.timestamps[activeEditDate] = timeStr;
+            memData.entries[activeEditDate] = content;
+            delete memData.drafts[activeEditDate];
+            
+            saveToDB('activeVault', memData); 
+            playSealSound();
+            saveMemoriesToCloud();
+            
+            const overlay = document.getElementById('animOverlay');
+            overlay.classList.add('active');
+            
+            updateGridVisuals();
+            updateFinalPrompt();
+            setTimeout(() => {
+                overlay.classList.remove('active');
+                openEditor(activeEditDate);
+            }, 2600); 
+        }
+        
+        async function unsealToday() {
+            if (!memData.entries[activeEditDate]) return;
+            const ok = await requireReauth("Unlock to edit today's sealed entry", isLockOnReeditEnabled);
+            if (!ok) return;
+            memData.drafts[activeEditDate] = memData.entries[activeEditDate];
+            delete memData.entries[activeEditDate];
+            saveToDB('activeVault', memData); 
+            updateGridVisuals();
+            openEditor(activeEditDate);
+            updateFinalPrompt();
+        }
+
+        function updateGridVisuals() {
+            const todayStr = getDateKey();
+            const blocks = document.getElementById('calendarGrid').children;
+            let gridStart = new Date(`${memData.startDate}T00:00:00`);
+            for (let i = 0; i < 365; i++) {
+                const currentBlockDate = new Date(gridStart);
+                currentBlockDate.setDate(gridStart.getDate() + i);
+                const dateStr = getDateKey(currentBlockDate);
+                blocks[i].className = 'day-block'; 
+                if (dateStr > todayStr) blocks[i].classList.add('locked');
+                else if (memData.entries[dateStr]) {
+                    blocks[i].classList.add('filled');
+                    if (memData.starred && memData.starred[dateStr]) blocks[i].classList.add('starred');
+                }
+                else if (dateStr === todayStr) blocks[i].classList.add('today');
+                else blocks[i].classList.add('missed');
+            }
+        }
+
+        function devUnlock() {
+            if (!memData) {
+                if (archives.length) { triggerWarpSequence(archives[0]); return; }
+                alert("Start a vault and write an entry first!"); return;
+            }
+            triggerWarpSequence(memData);
+        }
+
+        function enterTimeCapsule() {
+            if (!canEnterTimeCapsule()) return;
+            const snapshot = archiveCurrentVault();
+            memData = null;
+            saveToDB('activeVault', null); 
+            triggerWarpSequence(snapshot);
+        }
+
+        function triggerWarpSequence(capsule) {
+            activeCapsule = capsule;
+            const overlay = document.getElementById('warpOverlay');
+            const flash = document.getElementById('flashBang');
+            const msg = document.getElementById('warpMessage');
+            const core = document.getElementById('warpCore');
+            
+            overlay.classList.add('active');
+            playWarpSound();
+
+            msg.innerText = "Entering the capsule...";
+            core.style.animation = 'warpCoreExpand 6s cubic-bezier(0.8, 0, 0.2, 1) forwards';
+
+            setTimeout(() => {
+                msg.innerText = "Deconstructing Timeline...";
+                const entries = Object.values(capsule.entries);
+                if (entries.length === 0) entries.push("...", "Time passes", "Waiting");
+
+                let spawnCount = 0;
+                const totalSpawns = 30; 
+                const spawnInterval = setInterval(() => {
+                    if (spawnCount > totalSpawns) { clearInterval(spawnInterval); return; }
+
+                    const el = document.createElement('div');
+                    el.className = 'flying-entry';
+                    let text = entries[Math.floor(Math.random() * entries.length)];
+                    el.innerText = text.length > 40 ? text.substring(0, 40) + '...' : text;
+                    const angle = Math.random() * Math.PI * 2;
+                    const distance = 20 + Math.random() * 30;
+                    el.style.left = `${50 + Math.cos(angle) * distance}%`;
+                    el.style.top = `${50 + Math.sin(angle) * distance}%`;
+                    
+                    const duration = 1.5 - (spawnCount * 0.02);
+                    el.style.animationDuration = `${duration}s`;
+
+                    overlay.appendChild(el);
+                    setTimeout(() => el.remove(), duration * 1000);
+                    spawnCount++;
+                }, 80);
+            }, 1500);
+
+            setTimeout(() => {
+                msg.innerText = "Arrival Imminent";
+            }, 4500);
+
+            setTimeout(() => {
+                flash.classList.add('active');
+                setTimeout(() => {
+                    overlay.classList.remove('active');
+                    showEOY(capsule);
+                    msg.innerText = "Initializing...";
+                    setTimeout(() => flash.classList.remove('active'), 400);
+                }, 200);
+            }, 6000);
+        }
+
+        function showEOY(capsule) {
+            nav('screen-unlocked');
+            readerDates = Object.keys(capsule.entries).sort();
+            readerIndex = 0;
+            
+            document.getElementById('arrivalPhase').style.display = 'block';
+            document.getElementById('readerPhase').style.display = 'none';
+            document.getElementById('stepOutBtn').style.display = 'none';
+            document.getElementById('reader').style.display = 'none';
+            document.getElementById('timeline').innerHTML = '';
+
+            const grid = document.getElementById('arrivalGrid');
+            grid.innerHTML = '';
+            let gridStart = new Date(`${capsule.startDate}T00:00:00`);
+            const blocks = [];
+            const entryIndices = [];
+
+            for (let i = 0; i < 365; i++) {
+                const currentBlockDate = new Date(gridStart);
+                currentBlockDate.setDate(gridStart.getDate() + i);
+                const dateStr = getDateKey(currentBlockDate);
+                
+                const block = document.createElement('div');
+                block.className = 'day-block missed cascade-block'; 
+                block.style.animationDelay = `${i * 2}ms`; 
+                grid.appendChild(block);
+                blocks.push(block);
+
+                if (capsule.entries[dateStr]) {
+                    entryIndices.push(i);
+                }
+            }
+
+            if (entryIndices.length > 0) {
+                let delay = 0;
+                const stagger = Math.min(2000 / entryIndices.length, 80); 
+                
+                entryIndices.forEach((index) => {
+                    setTimeout(() => {
+                        blocks[index].classList.remove('missed');
+                        blocks[index].classList.add('anim-fill');
+                        setTimeout(() => blocks[index].classList.add('filled'), 400); 
+                    }, delay);
+                    delay += stagger;
+                });
+
+                setTimeout(() => {
+                    const btn = document.getElementById('stepOutBtn');
+                    btn.style.display = 'block';
+                    btn.style.animation = 'fadeIn 0.6s ease-out';
+                    btn.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }, delay + 600);
+                
+            } else {
+                document.getElementById('stepOutBtn').style.display = 'block';
+            }
+        }
+
+        function showReaderOptions() {
+            document.getElementById('arrivalPhase').style.display = 'none';
+            document.getElementById('readerPhase').style.display = 'block';
+            document.getElementById('readerPhase').style.animation = 'fadeIn 0.4s ease-out';
+        }
+
+        function startDayByDay() {
+            if (readerDates.length === 0) return alert("You need to seal at least one memory first!");
+            readerIndex = 0;
+            document.getElementById('btnReaderRandom').style.display = 'none';
+            document.getElementById('timeline').innerHTML = '';
+            document.getElementById('reader').style.display = 'block';
+            renderReader();
+        }
+
+        function moveReader(n) {
+            if (readerDates.length === 0) return;
+            readerIndex = (readerIndex + n + readerDates.length) % readerDates.length;
+            const dir = n > 0 ? 'next' : 'prev';
+            renderReader(dir);
+        }
+
+        function revealRandom() {
+            readerIndex = Math.floor(Math.random() * readerDates.length);
+            document.getElementById('btnReaderRandom').style.display = 'block';
+            document.getElementById('reader').style.display = 'block';
+            renderReader('none');
+        }
+
+        function renderReader(direction = 'none') {
+            const readerCard = document.getElementById('reader');
+            const d = readerDates[readerIndex];
+            
+            readerCard.classList.remove('slide-in-right', 'slide-in-left', 'fade-content');
+            void readerCard.offsetWidth;
+
+            if (direction === 'next') readerCard.classList.add('slide-in-right');
+            else if (direction === 'prev') readerCard.classList.add('slide-in-left');
+            else readerCard.classList.add('fade-content');
+
+            document.getElementById('readerDate').innerText = new Date(d).toLocaleDateString('en-US', { 
+                month: 'short', day: 'numeric', year: 'numeric' 
+            });
+            document.getElementById('readerTime').innerText = activeCapsule.timestamps[d] ? `• Sealed at ${activeCapsule.timestamps[d]}` : '';
+            document.getElementById('readerEntry').innerText = activeCapsule.entries[d];
+            document.getElementById('readerCount').innerText = `${readerIndex + 1} of ${readerDates.length}`;
+        }
+
+        
+        async function openArchiveWrapped(capsuleId) {
+            const capsule = archives.find(a => a.id === capsuleId);
+            if (!capsule) return;
+            const ok = await requireReauth('Unlock to view this journal', isLockOnArchivesEnabled);
+            if (!ok) return;
+            activeCapsule = capsule;
+            launchWrappedWithWarpIntro(false);
+        }
+
+        async function openArchiveMemories(capsuleId) {
+            const capsule = archives.find(a => a.id === capsuleId);
+            if (!capsule) return;
+            const ok = await requireReauth('Unlock to view this journal', isLockOnArchivesEnabled);
+            if (!ok) return;
+            activeCapsule = capsule;
+            showEOY(capsule);
+        }
+
+        async function showArchiveHome() {
+            const list = document.getElementById('archiveList');
+            list.innerHTML = '';
+            archives = await loadFromDB('archives') || [];
+
+            if (archives.length === 0) {
+                const emptyMsg = document.createElement('div');
+                emptyMsg.style.padding = '30px 20px';
+                emptyMsg.style.background = 'var(--card)';
+                emptyMsg.style.borderRadius = '16px';
+                emptyMsg.style.border = '1px dashed rgba(255,255,255,0.1)';
+                emptyMsg.style.color = 'var(--muted)';
+                emptyMsg.style.lineHeight = '1.6';
+                emptyMsg.innerHTML = `
+                    <p style="margin:0;">The capsule has detected an authorised controller.</p>
+                    <p style="margin:10px 0 0 0; color:var(--text); font-weight:500;">
+                        Keep writing your memories atleast once a day chap, we shall meet at the end of the year.
+                    </p>`;
+                list.appendChild(emptyMsg);
+            } else {
+                archives.forEach((capsule, index) => {
+                    const button = document.createElement('button');
+                    button.className = index === 0 ? 'primary-btn' : 'secondary-btn';
+                    button.style.marginBottom = '12px';
+                    button.textContent = `${capsule.label || getCapsuleLabel(capsule)} Journal`;
+                    button.onclick = async () => {
+                        const ok = await requireReauth('Unlock to view this journal', isLockOnArchivesEnabled);
+                        if (ok) triggerWarpSequence(capsule);
+                    };
+                    list.appendChild(button);
+                });
+            }
+            nav('screen-archive');
+        }
+
+        function shareApp() {
+            const shareData = {
+                title: 'MemStore',
+                text: 'I am tracking my year with MemStore — one good thing a day. Start your journal!',
+                url: window.location.href 
+            };
+            if (navigator.share) {
+                navigator.share(shareData).catch(err => console.log('Share canceled', err));
+            } else {
+                navigator.clipboard.writeText(window.location.href);
+                alert("App link copied to clipboard!");
+            }
+        }
+
+        function shareMemory() {
+            const date = document.getElementById('readerDate').innerText;
+            const entry = document.getElementById('readerEntry').innerText;
+            const shareText = `A memory from ${date}:\n\n"${entry}"\n\n— Logged via MemStore`;
+            if (navigator.share) {
+                navigator.share({ title: 'MemStore Memory', text: shareText }).catch(err => console.log('Share canceled', err));
+            } else {
+                navigator.clipboard.writeText(shareText);
+                alert("Memory copied to clipboard!");
+            }
+        }
+
+        // --- PREMIUM UI SOUND SYSTEM ---
+        function playUISound(type) {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine'; 
+
+            if (type === 'tick') {
+                osc.frequency.setValueAtTime(350, now);
+                osc.frequency.exponentialRampToValueAtTime(250, now + 0.03);
+                gain.gain.setValueAtTime(0.04, now); 
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.03);
+                osc.start(now); osc.stop(now + 0.03);
+            } else if (type === 'pop') {
+                osc.frequency.setValueAtTime(450, now);
+                osc.frequency.exponentialRampToValueAtTime(300, now + 0.06);
+                gain.gain.setValueAtTime(0.08, now); 
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+                osc.start(now); osc.stop(now + 0.06);
+            } else if (type === 'swell') {
+                osc.frequency.setValueAtTime(300, now);
+                osc.frequency.exponentialRampToValueAtTime(500, now + 0.1);
+                gain.gain.setValueAtTime(0, now);
+                gain.gain.linearRampToValueAtTime(0.1, now + 0.05);
+                gain.gain.linearRampToValueAtTime(0, now + 0.1);
+                osc.start(now); osc.stop(now + 0.1);
+            }
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+        }
+
+        document.addEventListener('click', (e) => {
+            const isGridBox = e.target.closest('.day-block') || e.target.closest('.theme-picker');
+            const isPrimaryBtn = e.target.closest('.primary-btn');
+            const isStandardBtn = e.target.closest('button') && !isPrimaryBtn;
+
+            if (isGridBox) playUISound('tick');
+            else if (isPrimaryBtn) playUISound('swell');
+            else if (isStandardBtn) playUISound('pop');
+        });
+
+        // Register the Service Worker for PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js').catch(err => console.log('Service Worker registration failed', err));
+            });
+        }
+
+        // --- BACKUP & RESTORE SYSTEM (Local Plaintext) ---
+        async function exportBackup() {
+            try {
+                const activeVaultData = await loadFromDB('activeVault');
+                const archivesData = await loadFromDB('archives') || [];
+                const backupData = { activeVault: activeVaultData, archives: archivesData, exportDate: new Date().toISOString() };
+                const blob = new Blob([JSON.stringify(backupData)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `MemStore_Backup_${getDateKey()}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            } catch (error) {
+                alert("Failed to export backup. Ensure you have an active vault.");
+            }
+        }
+
+        function importBackup(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            if (!confirm("Warning: Restoring a backup will overwrite your current vault. Do you want to proceed?")) {
+                event.target.value = ''; 
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (data.activeVault !== undefined && data.archives !== undefined) {
+                        await saveToDB('activeVault', data.activeVault);
+                        await saveToDB('archives', data.archives);
+                        alert('Backup restored successfully! The timeline will now refresh.');
+                        location.reload(); 
+                    } else {
+                        alert('Invalid backup file format. Are you sure this is a MemStore backup?');
+                    }
+                } catch (err) {
+                    alert('Error reading the backup file. It might be corrupted.');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // --- END-TO-END ENCRYPTION ENGINE (Web Crypto API) ---
+        function stringToBuffer(str) { return new TextEncoder().encode(str); }
+        function bufferToString(buf) { return new TextDecoder().decode(buf); }
+        function bufferToBase64(buf) { return btoa(String.fromCharCode(...new Uint8Array(buf))); }
+        function base64ToBuffer(base64) { return Uint8Array.from(atob(base64), c => c.charCodeAt(0)).buffer; }
+
+        async function deriveKey(passphrase) {
+            const encoder = new TextEncoder();
+            const passwordBuffer = encoder.encode(passphrase);
+            const salt = encoder.encode("MemStore_ZeroKnowledge_Salt_2026"); 
+            const baseKey = await crypto.subtle.importKey("raw", passwordBuffer, "PBKDF2", false, ["deriveKey"]);
+            return crypto.subtle.deriveKey(
+                { name: "PBKDF2", salt: salt, iterations: 100000, hash: "SHA-256" },
+                baseKey, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]
+            );
+        }
+
+        async function encryptData(obj, passphrase) {
+            const key = await deriveKey(passphrase);
+            const iv = crypto.getRandomValues(new Uint8Array(12)); 
+            const plainText = stringToBuffer(JSON.stringify(obj));
+            const cipherBuffer = await crypto.subtle.encrypt({ name: "AES-GCM", iv: iv }, key, plainText);
+            return { ciphertext: bufferToBase64(cipherBuffer), iv: bufferToBase64(iv) };
+        }
+
+        async function decryptData(encryptedContainer, passphrase) {
+            try {
+                const key = await deriveKey(passphrase);
+                const iv = base64ToBuffer(encryptedContainer.iv);
+                const cipherBuffer = base64ToBuffer(encryptedContainer.ciphertext);
+                const decryptedBuffer = await crypto.subtle.decrypt({ name: "AES-GCM", iv: iv }, key, cipherBuffer);
+                return JSON.parse(bufferToString(decryptedBuffer));
+            } catch (e) {
+                throw new Error("Decryption failed. Incorrect passphrase.");
+            }
+        }
+
+        // --- FIREBASE CLOUD SYNC SYSTEM (E2EE) ---
+        let cloudSyncUnsubscribe = null;
+
+        function getUserEncryptionSecret(user) {
+            return `MemStore:${user.uid}`;
+        }
+
+        function isEncryptedContainer(value) {
+            return value && typeof value === 'object' && typeof value.ciphertext === 'string' && typeof value.iv === 'string';
+        }
+
+        async function readCloudData(cloudData, user) {
+            const secret = getUserEncryptionSecret(user);
+            return {
+                vault: isEncryptedContainer(cloudData.vault) ? await decryptData(cloudData.vault, secret) : cloudData.vault,
+                archives: isEncryptedContainer(cloudData.archives) ? await decryptData(cloudData.archives, secret) : (cloudData.archives || [])
+            };
+        }
+
+        function updateSyncButton(user) {
+            const syncBtn = document.getElementById('btnGoogleSync');
+            syncBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg> Logged in as ${user.displayName} (Click to Logout)`;
+            syncBtn.style.borderColor = "#4ade80";
+            syncBtn.style.color = "#4ade80";
+            syncBtn.onclick = handleSignOut;
+        }
+
+        function enableCloudSync(user, pullFromCloud = false) {
+            updateSyncButton(user);
+            startSync(user);
+            if (pullFromCloud) loadMemoriesFromCloud(false);
+        }
+
+        function attachAuthStateListener() {
+            auth.onAuthStateChanged(user => {
+                const syncBtn = document.getElementById('btnGoogleSync');
+                if (user) {
+                    enableCloudSync(user, false);
+                } else {
+                    if (cloudSyncUnsubscribe) {
+                        cloudSyncUnsubscribe();
+                        cloudSyncUnsubscribe = null;
+                    }
+                    syncBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg> Sign in (to access your memories remotely!)`;
+                    syncBtn.style.borderColor = "rgba(255,255,255,0.1)";
+                    syncBtn.style.color = "var(--text)";
+                    syncBtn.onclick = handleAuthClick;
+                }
+            });
+        }
+	async function handleSignOut() {
+            if (confirm("Do you want to log out of MemStore?")) {
+                // Automatically download a backup before wiping the active cloud connection
+                await exportBackup();
+                auth.signOut().then(() => console.log("User signed out."));
+            }
+        }
+
+        async function handleAuthClick() {
+            const syncBtn = document.getElementById('btnGoogleSync');
+            const originalText = syncBtn.innerHTML;
+            if (!auth) {
+                syncBtn.innerHTML = 'Connecting...';
+                syncBtn.disabled = true;
+                try {
+                    await loadFirebaseSDK();
+                } catch (e) {
+                    syncBtn.innerHTML = originalText;
+                    syncBtn.disabled = false;
+                    alert("Couldn't reach the cloud sync service. Check your connection and try again.");
+                    return;
+                }
+                syncBtn.disabled = false;
+            }
+
+            if (auth.currentUser) return alert(`You are already connected as ${auth.currentUser.displayName}!`);
+            
+            // Automatically download a backup of local data before connecting to the cloud
+            await exportBackup();
+
+            const provider = new firebase.auth.GoogleAuthProvider();
+            auth.signInWithPopup(provider).then((result) => {
+                enableCloudSync(result.user, true);
+            }).catch((error) => alert("Sign in failed. Please try again."));
+        }
+        async function saveMemoriesToCloud() {
+            const user = auth.currentUser;
+            if (!user || !memData) return;
+            try {
+                const secret = getUserEncryptionSecret(user);
+                const encryptedVault = await encryptData(memData, secret);
+                const encryptedArchives = await encryptData(archives, secret);
+                await db.collection("users").doc(user.uid).set({
+                    vault: encryptedVault, archives: encryptedArchives, lastSynced: new Date().toISOString()
+                });
+                console.log("Encrypted memories secured in the cloud!");
+            } catch (e) {
+                console.error("Cloud Save Error", e);
+            }
+        }
+
+        async function loadMemoriesFromCloud(showAlertIfEmpty = true) {
+            const user = auth.currentUser;
+            if (!user) return alert("Please sign in first to pull your memories from the cloud.");
+
+            try {
+                const doc = await db.collection("users").doc(user.uid).get();
+                if (doc.exists) {
+                    const cloudData = doc.data();
+                    if (confirm("Found encrypted memories in the cloud! Do you want to overwrite your local device memories with the cloud version?")) {
+                        try {
+                            const restored = await readCloudData(cloudData, user);
+                            memData = restored.vault;
+                            archives = restored.archives;
+                            await saveToDB('activeVault', memData);
+                            await saveToDB('archives', archives);
+                            alert("Memories decrypted and restored! Reloading...");
+                            location.reload(); 
+                        } catch (decryptionError) {
+                            alert("Could not restore the cloud backup.");
+                        }
+                    }
+                } else {
+                    if (showAlertIfEmpty) alert("No backup found in the cloud yet. Seal an entry to automatically back it up!");
+                    saveMemoriesToCloud();
+                }
+            } catch (e) {
+                alert("Failed to connect to the cloud.");
+            }
+        }
+
+      function startSync(user) {
+            console.log("Sync Engine: Online");
+            if (cloudSyncUnsubscribe) cloudSyncUnsubscribe();
+            cloudSyncUnsubscribe = db.collection("users").doc(user.uid).onSnapshot(async (doc) => {
+                if (doc.exists) {
+                    const incomingData = doc.data();
+                    if (!incomingData.vault) return;
+                    try {
+                        const restored = await readCloudData(incomingData, user);
+                        const decryptedVault = restored.vault;
+                        const decryptedArchives = restored.archives;
+
+                        if (JSON.stringify(decryptedVault) !== JSON.stringify(memData)) {
+                            
+                            // --- NEW CONFLICT RESOLUTION LOGIC ---
+                            const localCount = (memData && memData.entries) ? Object.keys(memData.entries).length : 0;
+                            const cloudCount = (decryptedVault && decryptedVault.entries) ? Object.keys(decryptedVault.entries).length : 0;
+                            
+                            // Prevent overwrite if cloud has fewer entries for the same active vault ID
+                            if (memData && decryptedVault.id === memData.id && cloudCount < localCount) {
+                                console.warn("Ignored cloud update: Local device has more entries. Pushing local to cloud instead.");
+                                saveMemoriesToCloud(); 
+                                return; // Stop the overwrite
+                            }
+                            // -------------------------------------
+
+                            console.log("Vibe Check: New encrypted memories detected and decrypted!");
+                            memData = decryptedVault;
+                            archives = decryptedArchives || [];
+                            await saveToDB('activeVault', memData);
+                            await saveToDB('archives', archives);
+                            
+                            if (document.getElementById('screen-main').classList.contains('active')) renderApp(); 
+                            const status = document.getElementById('saveStatus');
+                            if (status) {
+                                status.innerText = "Synced & Decrypted from Cloud";
+                                setTimeout(() => status.innerText = "", 2000);
+                            }
+                        }
+                    } catch (err) {
+                        console.error("Sync Engine: Decryption failed (bad passphrase or corrupt data).", err);
+                    }
+                }
+            });
+        }        
+        
+        // =========================================
+        // GOLDEN MOMENT (STAR) CONTROLLER
+        // =========================================
+        function toggleStarMoment() {
+            if (!activeEditDate) return;
+            if (!memData) return;
+            if (!memData.starred) memData.starred = {};
+
+            const isCurrentlyStarred = !!memData.starred[activeEditDate];
+            if (isCurrentlyStarred) {
+                delete memData.starred[activeEditDate];
+            } else {
+                memData.starred[activeEditDate] = true;
+            }
+
+            saveToDB('activeVault', memData);
+            saveMemoriesToCloud();
+            updateStarUI();
+            updateGridVisuals();
+        }
+
+        function updateStarUI() {
+            const isStarred = !!(memData && memData.starred && memData.starred[activeEditDate]);
+            const starBtn = document.getElementById('starMomentBtn');
+            const sealedStarBtn = document.getElementById('sealedStarBtn');
+
+            [starBtn, sealedStarBtn].forEach(btn => {
+                if (!btn) return;
+                btn.classList.toggle('active', isStarred);
+                const lbl = btn.querySelector('.star-label');
+                if (lbl) lbl.innerText = isStarred ? 'Golden Moment ⭐' : 'Mark as Golden Moment';
+            });
+        }
+
+        // =========================================
+        // MEMSTORE WRAPPED 12-SLIDE STORY CONTROLLER
+        // =========================================
+        let wrappedTimer = null;
+        let wrappedSlideIdx = 0;
+        const WRAPPED_TOTAL_SLIDES = 12;
+        let wrappedSound = true;
+        let wrappedPaused = false;
+        const WRAPPED_DURATION = 6000; // 6 seconds per slide
+        let wrappedStartTime = 0;
+        let wrappedRemaining = 6000;
+        let currentWrappedStats = null;
+
+        function getDemoWrappedEntries() {
+            const currentYear = new Date().getFullYear();
+            return {
+                [`${currentYear}-01-01`]: "Started my 365-day journal with a warm cup of coffee and fresh hopes.",
+                [`${currentYear}-01-18`]: "Late night walk in the freezing cold talking about life and the future.",
+                [`${currentYear}-02-14`]: "Made homemade pizza with friends, burnt the crust but laughed so much.",
+                [`${currentYear}-03-05`]: "Finally received the news I had been praying for all month.",
+                [`${currentYear}-03-24`]: "First warm sunny afternoon of the year reading in the park with iced matcha.",
+                [`${currentYear}-04-12`]: "Adopted a stray kitten that decided our front porch was home.",
+                [`${currentYear}-05-08`]: "Cherry blossoms in full bloom, everything felt peaceful today.",
+                [`${currentYear}-06-19`]: "Midnight road trip to the coast, watched the sunrise over the ocean.",
+                [`${currentYear}-07-04`]: "Fireworks on the rooftop with everyone singing along to old songs.",
+                [`${currentYear}-07-28`]: "Shipped a side project I spent months building. It actually works and friends loved it!",
+                [`${currentYear}-08-15`]: "Stargazing on a clear summer night, spotted 3 shooting stars.",
+                [`${currentYear}-09-22`]: "First sweater weather day of autumn, rain tapping on the window.",
+                [`${currentYear}-10-14`]: "Walked through golden fallen leaves holding hands in the quiet breeze. Felt completely at peace.",
+                [`${currentYear}-10-31`]: "Spooky movie marathon with hot cider and all the snacks.",
+                [`${currentYear}-11-26`]: "Gathered around the table sharing gratitude for simply being alive.",
+                [`${currentYear}-12-15`]: "Decorating the tree while snow fell gently outside.",
+                [`${currentYear}-12-31`]: "Looking back on 365 days of growth. We made it through."
+            };
+        }
+
+        function computeWrappedStats(entriesObj, dates, isDemo, starredObj = {}, timestampsObj = {}) {
+            const total = dates.length;
+            const rate = Math.min(100, Math.round((total / 365) * 100));
+
+            // 1. Longest Streak
+            let longestStreak = 0;
+            let currentStreak = 0;
+            let prevDate = null;
+
+            for (const dStr of dates) {
+                const cur = new Date(`${dStr}T00:00:00`);
+                if (!prevDate) {
+                    currentStreak = 1;
+                } else {
+                    const diffDays = Math.round((cur - prevDate) / (1000 * 60 * 60 * 24));
+                    if (diffDays === 1) {
+                        currentStreak++;
+                    } else if (diffDays > 1) {
+                        currentStreak = 1;
+                    }
+                }
+                if (currentStreak > longestStreak) longestStreak = currentStreak;
+                prevDate = cur;
+            }
+            if (isDemo && longestStreak < 14) longestStreak = 24;
+
+            // 2. Total Words & Reading Volume
+            let totalWords = 0;
+            dates.forEach(d => {
+                const text = entriesObj[d] || "";
+                totalWords += text.trim().split(/\s+/).filter(Boolean).length;
+            });
+            if (isDemo && totalWords < 200) totalWords = total * 22;
+            const pagesCount = (totalWords / 250).toFixed(1);
+            const avgWords = Math.round(totalWords / Math.max(1, total));
+
+            // 3. Journaling Archetype Persona
+            let archetype = {
+                title: "The Mindful Chronicler",
+                icon: "☕",
+                desc: "You pause in the middle of life's rush to savor the small victories and good people around you."
+            };
+
+            const tsKeys = Object.keys(timestampsObj || {});
+            if (tsKeys.length > 0) {
+                let nightCount = 0, morningCount = 0, afternoonCount = 0;
+                tsKeys.forEach(k => {
+                    const t = timestampsObj[k];
+                    if (typeof t === 'string' && t.includes(':')) {
+                        let h = parseInt(t.split(':')[0], 10);
+                        if (/pm/i.test(t) && h < 12) h += 12;
+                        if (/am/i.test(t) && h === 12) h = 0;
+                        if (h >= 20 || h < 5) nightCount++;
+                        else if (h >= 5 && h < 12) morningCount++;
+                        else afternoonCount++;
+                    }
+                });
+                if (nightCount >= morningCount && nightCount >= afternoonCount) {
+                    archetype = {
+                        title: "The Midnight Philosopher",
+                        icon: "🌙",
+                        desc: "You reflect on life in the stillness of the late hours, finding clarity after the world quiets down."
+                    };
+                } else if (morningCount >= afternoonCount) {
+                    archetype = {
+                        title: "The Morning Light Seeker",
+                        icon: "☀️",
+                        desc: "You start your days with intention, greeting the world with an open heart and early gratitude."
+                    };
+                }
+            } else if (total >= 250) {
+                archetype = {
+                    title: "The Dedicated Chronicler",
+                    icon: "🛡️",
+                    desc: "Unwavering commitment. You built a rare habit of noticing the good in nearly every single day."
+                };
+            }
+
+            // 4. Most active month
+            const monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+            const monthCounts = {};
+            dates.forEach(d => {
+                const m = parseInt(d.split('-')[1], 10) - 1;
+                monthCounts[m] = (monthCounts[m] || 0) + 1;
+            });
+            let topMonthIdx = 0;
+            let maxCount = 0;
+            for (let m = 0; m < 12; m++) {
+                if ((monthCounts[m] || 0) > maxCount) {
+                    maxCount = monthCounts[m];
+                    topMonthIdx = m;
+                }
+            }
+            const topMonthName = monthNames[topMonthIdx];
+            const topMonthDates = dates.filter(d => parseInt(d.split('-')[1], 10) - 1 === topMonthIdx);
+            let topMonthQuote = topMonthDates.length > 0 ? (entriesObj[topMonthDates[Math.floor(topMonthDates.length / 2)]] || "") : "";
+
+            // 5. Four Seasons Highlights
+            const seasons = [
+                { name: "Winter ❄️", months: [11, 0, 1] },
+                { name: "Spring 🌸", months: [2, 3, 4] },
+                { name: "Summer ☀️", months: [5, 6, 7] },
+                { name: "Autumn 🍂", months: [8, 9, 10] }
+            ];
+
+            const seasonHighlights = seasons.map(s => {
+                const matchingDates = dates.filter(d => {
+                    const m = parseInt(d.split('-')[1], 10) - 1;
+                    return s.months.includes(m);
+                });
+                if (matchingDates.length > 0) {
+                    const chosenDate = matchingDates[Math.floor(matchingDates.length / 2)];
+                    return { season: s.name, date: chosenDate, text: entriesObj[chosenDate] };
+                }
+                return null;
+            }).filter(Boolean);
+
+            // 6. Smart Spotlight Memory (Golden Moment)
+            let starredDates = dates.filter(d => starredObj && starredObj[d] && entriesObj[d]);
+            let spotlightDate = null;
+            let spotlightText = "";
+            let isUserStarred = false;
+
+            if (starredDates.length > 0) {
+                starredDates.sort((a, b) => (entriesObj[b] || '').length - (entriesObj[a] || '').length);
+                spotlightDate = starredDates[0];
+                spotlightText = entriesObj[spotlightDate];
+                isUserStarred = true;
+            } else if (dates.length > 0) {
+                const emotionKeywords = [
+                    "finally", "proud", "unforgettable", "best day", "love", "loved", 
+                    "cried", "tears", "grateful", "gratitude", "magical", "dream",
+                    "accomplished", "shipped", "peaceful", "beautiful", "happy", "forever",
+                    "heart", "smile", "sunset", "sunrise", "laugh", "friends"
+                ];
+
+                let bestScore = -1;
+                let bestDate = dates[0];
+
+                dates.forEach(d => {
+                    const text = entriesObj[d] || "";
+                    if (!text) return;
+                    let score = Math.min(text.length, 250) * 0.5;
+                    const exclamations = (text.match(/!/g) || []).length;
+                    score += Math.min(exclamations, 3) * 15;
+                    const lower = text.toLowerCase();
+                    emotionKeywords.forEach(kw => {
+                        if (lower.includes(kw)) score += 20;
+                    });
+                    const month = parseInt(d.split('-')[1], 10);
+                    if (month >= 5 && month <= 10) score += 12;
+
+                    if (score > bestScore) {
+                        bestScore = score;
+                        bestDate = d;
+                    }
+                });
+
+                spotlightDate = bestDate;
+                spotlightText = entriesObj[bestDate] || "A good day worth remembering.";
+            }
+
+            // 7. THROWBACK #1: First Memory of the Year (Day 1 / Earliest Sealed Date)
+            let firstDate = dates[0] || `${new Date().getFullYear()}-01-01`;
+            let firstText = entriesObj[firstDate] || "Started my 365-day journal.";
+
+            // 8. THROWBACK #2: Mid-Year Flashback (from ~5-7 months ago)
+            let throwbackDate = null;
+            let throwbackText = "";
+            const midDates = dates.filter(d => {
+                const m = parseInt(d.split('-')[1], 10);
+                return m >= 5 && m <= 8;
+            });
+            if (midDates.length > 0) {
+                throwbackDate = midDates[Math.floor(midDates.length / 2)];
+                throwbackText = entriesObj[throwbackDate];
+            } else if (dates.length > 2) {
+                throwbackDate = dates[Math.floor(dates.length * 0.5)];
+                throwbackText = entriesObj[throwbackDate];
+            } else {
+                throwbackDate = dates[0] || `${new Date().getFullYear()}-06-19`;
+                throwbackText = entriesObj[throwbackDate] || "A quiet moment of gratitude.";
+            }
+
+            // 9. THROWBACK #3: Three Forgotten Micro-Gems
+            let candidateDates = dates.filter(d => d !== spotlightDate && d !== firstDate && d !== throwbackDate);
+            let microGems = [];
+
+            if (candidateDates.length >= 3) {
+                const idx1 = Math.floor(candidateDates.length * 0.2);
+                const idx2 = Math.floor(candidateDates.length * 0.55);
+                const idx3 = Math.floor(candidateDates.length * 0.85);
+                [candidateDates[idx1], candidateDates[idx2], candidateDates[idx3]].forEach(d => {
+                    if (d && entriesObj[d]) {
+                        microGems.push({ date: d, text: entriesObj[d] });
+                    }
+                });
+            } else if (candidateDates.length > 0) {
+                candidateDates.forEach(d => microGems.push({ date: d, text: entriesObj[d] }));
+            } else {
+                microGems = [
+                    { date: "March 24", text: "First warm sunny afternoon reading in the park with iced matcha." },
+                    { date: "July 4", text: "Fireworks on the rooftop with everyone singing along to old songs." },
+                    { date: "October 31", text: "Spooky movie marathon with hot cider and all the snacks." }
+                ];
+            }
+
+            return {
+                total,
+                rate,
+                longestStreak: Math.max(1, longestStreak),
+                totalWords,
+                pagesCount,
+                avgWords,
+                archetype,
+                topMonthName,
+                topMonthCount: maxCount || Math.ceil(total / 4),
+                topMonthQuote: topMonthQuote || "A beautiful memory in your peak month.",
+                seasonHighlights,
+                spotlightDate,
+                spotlightText,
+                isUserStarred,
+                firstDate,
+                firstText,
+                throwbackDate,
+                throwbackText,
+                microGems,
+                isDemo
+            };
+        }
+
+        function playStoryChime() {
+            if (!wrappedSound) return;
+            try {
+                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const now = audioCtx.currentTime;
+                const notes = [523.25, 659.25, 783.99, 1046.50];
+                notes.forEach((freq, idx) => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.07);
+                    gain.gain.setValueAtTime(0.05, now + idx * 0.07);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.07 + 0.35);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now + idx * 0.07);
+                    osc.stop(now + idx * 0.07 + 0.4);
+                });
+            } catch (_) {}
+        }
+
+        
+        // =========================================
+        // TIME-TUNNEL HYPERSPACE INTRO (BEFORE WRAPPED)
+        // =========================================
+        function launchWrappedWithWarpIntro(forceDemo = false, customStats = null) {
+            let capsule = activeCapsule || memData;
+            let entriesObj = (capsule && capsule.entries) ? capsule.entries : {};
+            let dates = Object.keys(entriesObj).sort();
+            const isDemo = forceDemo || dates.length < 1;
+            if (isDemo) {
+                entriesObj = getDemoWrappedEntries();
+            }
+            const sampleTexts = Object.values(entriesObj).filter(Boolean);
+
+            const overlay = document.getElementById('warpOverlay');
+            const flash = document.getElementById('flashBang');
+            const msg = document.getElementById('warpMessage');
+            const core = document.getElementById('warpCore');
+
+            if (!overlay || sampleTexts.length === 0) {
+                openMemStoreWrapped(forceDemo, customStats);
+                return;
+            }
+
+            overlay.classList.add('active');
+            playWarpSound();
+            msg.innerText = "Reconstructing your year in memories...";
+            core.style.animation = 'warpCoreExpand 3.8s cubic-bezier(0.8, 0, 0.2, 1) forwards';
+
+            let spawnCount = 0;
+            const totalSpawns = 25;
+            const spawnInterval = setInterval(() => {
+                if (spawnCount > totalSpawns) {
+                    clearInterval(spawnInterval);
+                    return;
+                }
+
+                const el = document.createElement('div');
+                el.className = 'flying-entry';
+                let text = sampleTexts[Math.floor(Math.random() * sampleTexts.length)];
+                el.innerText = text.length > 45 ? text.substring(0, 45) + '...' : text;
+                const angle = Math.random() * Math.PI * 2;
+                const distance = 20 + Math.random() * 30;
+                el.style.left = `${50 + Math.cos(angle) * distance}%`;
+                el.style.top = `${50 + Math.sin(angle) * distance}%`;
+
+                const duration = 1.4 - (spawnCount * 0.02);
+                el.style.animationDuration = `${duration}s`;
+
+                overlay.appendChild(el);
+                setTimeout(() => el.remove(), duration * 1000);
+                spawnCount++;
+            }, 90);
+
+            // Tap anywhere during warp to skip straight into story
+            const skipWarp = () => {
+                clearInterval(spawnInterval);
+                overlay.onclick = null;
+                overlay.classList.remove('active');
+                openMemStoreWrapped(forceDemo, customStats);
+            };
+            overlay.onclick = skipWarp;
+
+            setTimeout(() => {
+                msg.innerText = "Traveling through the moments...";
+            }, 2200);
+
+            setTimeout(() => {
+                flash.classList.add('active');
+                setTimeout(() => {
+                    overlay.onclick = null;
+                    overlay.classList.remove('active');
+                    openMemStoreWrapped(forceDemo, customStats);
+                    msg.innerText = "Initializing...";
+                    setTimeout(() => flash.classList.remove('active'), 400);
+                }, 200);
+            }, 3800);
+        }
+
+        function openMemStoreWrapped(forceDemo = false, customStats = null) {
+            let capsule = activeCapsule || memData;
+            if (customStats) {
+                currentWrappedStats = customStats;
+            } else {
+                let entriesObj = (capsule && capsule.entries) ? capsule.entries : {};
+                let dates = Object.keys(entriesObj).sort();
+
+                const isDemo = forceDemo || dates.length < 1;
+                if (isDemo) {
+                    entriesObj = getDemoWrappedEntries();
+                    dates = Object.keys(entriesObj).sort();
+                }
+
+                const starredMap = (capsule && capsule.starred) || (memData && memData.starred) || {};
+                const timestampsMap = (capsule && capsule.timestamps) || (memData && memData.timestamps) || {};
+                currentWrappedStats = computeWrappedStats(entriesObj, dates, isDemo, starredMap, timestampsMap);
+                currentWrappedStats.year = (capsule && capsule.year) || new Date().getFullYear();
+            }
+
+            // Slide 0: Intro
+            const introPill = document.getElementById('wrappedSlide0Pill');
+            if (introPill) introPill.innerText = `✨ ${currentWrappedStats.year || 2026} Daily Journal Wrapped`;
+
+            // Slide 1: Throwback #1 - How It Began
+            const fDate = document.getElementById('wrappedFirstDate');
+            if (fDate) fDate.innerText = `📅 ${currentWrappedStats.firstDate || 'Day 1'}`;
+            const fText = document.getElementById('wrappedFirstText');
+            if (fText) fText.innerText = `"${currentWrappedStats.firstText || 'Started my journal.'}"`;
+
+            // Slide 2: Consistency
+            const s2Total = document.getElementById('wrappedSlide2TotalText');
+            if (s2Total) s2Total.innerText = `${currentWrappedStats.total} good memories`;
+            const s2Days = document.getElementById('wrappedSlide2DaysVal');
+            if (s2Days) s2Days.innerText = currentWrappedStats.total;
+            const s2Rate = document.getElementById('wrappedSlide2RateVal');
+            if (s2Rate) s2Rate.innerText = `${currentWrappedStats.rate}%`;
+
+            // Slide 3: Streak
+            const s3Streak = document.getElementById('wrappedSlide3StreakText');
+            if (s3Streak) s3Streak.innerText = `${currentWrappedStats.longestStreak} days in a row`;
+
+            // Slide 4: Words Written
+            const s4Words = document.getElementById('wrappedSlide4WordsText');
+            if (s4Words) s4Words.innerText = `${(currentWrappedStats.totalWords || 0).toLocaleString()} words`;
+            const s4Pages = document.getElementById('wrappedSlide4PagesVal');
+            if (s4Pages) s4Pages.innerText = `~${currentWrappedStats.pagesCount || '1.0'}`;
+            const s4Avg = document.getElementById('wrappedSlide4AvgVal');
+            if (s4Avg) s4Avg.innerText = currentWrappedStats.avgWords || 22;
+
+            // Slide 5: Archetype
+            const arch = currentWrappedStats.archetype || { title: "The Mindful Chronicler", icon: "☕", desc: "You notice the good in everyday moments." };
+            const archTitle = document.getElementById('wrappedArchetypeTitle');
+            if (archTitle) archTitle.innerText = arch.title;
+            const archIcon = document.getElementById('wrappedArchetypeIcon');
+            if (archIcon) archIcon.innerText = arch.icon;
+            const archDesc = document.getElementById('wrappedArchetypeDesc');
+            if (archDesc) archDesc.innerText = arch.desc;
+
+            // Slide 6: Peak Month
+            const topMTitle = document.getElementById('wrappedTopMonthTitle');
+            if (topMTitle) topMTitle.innerText = currentWrappedStats.topMonthName;
+            const topMCount = document.getElementById('wrappedTopMonthCount');
+            if (topMCount) topMCount.innerText = `Peak Month ${currentWrappedStats.topMonthName} &bull; ${currentWrappedStats.topMonthCount || 12} memories`;
+            const topMQuote = document.getElementById('wrappedTopMonthQuote');
+            if (topMQuote) topMQuote.innerText = currentWrappedStats.topMonthQuote ? `"${currentWrappedStats.topMonthQuote}"` : "A month filled with quiet gratitude.";
+
+            // Slide 7: Four Seasons Highlights
+            const seasonsBox = document.getElementById('wrappedSeasonCards');
+            if (seasonsBox) {
+                seasonsBox.innerHTML = '';
+                (currentWrappedStats.seasonHighlights || []).slice(0, 4).forEach(item => {
+                    const card = document.createElement('div');
+                    card.style.background = 'rgba(30, 41, 59, 0.55)';
+                    card.style.border = '1px solid rgba(255, 255, 255, 0.12)';
+                    card.style.borderRadius = '12px';
+                    card.style.padding = '8px 12px';
+                    card.style.textAlign = 'left';
+                    card.innerHTML = `
+                        <div style="font-size: 0.72rem; font-weight: 700; color: #818cf8; margin-bottom: 2px;">${item.season} &bull; ${item.date}</div>
+                        <div style="font-size: 0.85rem; color: #f1f5f9; font-weight: 500; line-height: 1.3;">"${item.text}"</div>
+                    `;
+                    seasonsBox.appendChild(card);
+                });
+            }
+
+            // Slide 8: Spotlight (Golden Moment)
+            const spotDate = document.getElementById('wrappedSpotlightDate');
+            if (spotDate) spotDate.innerText = `📅 ${currentWrappedStats.spotlightDate}`;
+            const spotText = document.getElementById('wrappedSpotlightText');
+            if (spotText) spotText.innerText = `"${currentWrappedStats.spotlightText}"`;
+            const starPill = document.getElementById('wrappedSpotlightPill');
+            const starTag = document.getElementById('wrappedSpotlightStarredTag');
+            if (starPill) starPill.innerText = currentWrappedStats.isUserStarred ? '⭐ Your Golden Moment' : '⭐ Spotlight Memory';
+            if (starTag) starTag.style.display = currentWrappedStats.isUserStarred ? 'flex' : 'none';
+
+            // Slide 9: Throwback #2 - Mid-Year Flashback
+            const tbDate = document.getElementById('wrappedThrowbackDate');
+            if (tbDate) tbDate.innerText = `📅 ${currentWrappedStats.throwbackDate}`;
+            const tbText = document.getElementById('wrappedThrowbackText');
+            if (tbText) tbText.innerText = `"${currentWrappedStats.throwbackText}"`;
+
+            // Slide 10: Throwback #3 - Three Forgotten Micro-Gems
+            const gemsBox = document.getElementById('wrappedMicroGemsBox');
+            if (gemsBox) {
+                gemsBox.innerHTML = '';
+                const colors = ['#38bdf8', '#f59e0b', '#ec4899'];
+                (currentWrappedStats.microGems || []).slice(0, 3).forEach((gem, idx) => {
+                    const card = document.createElement('div');
+                    card.style.background = 'rgba(30, 41, 59, 0.55)';
+                    card.style.border = '1px solid rgba(255, 255, 255, 0.12)';
+                    card.style.borderRadius = '12px';
+                    card.style.padding = '8px 12px';
+                    card.style.textAlign = 'left';
+                    card.innerHTML = `
+                        <div style="font-size: 0.72rem; font-weight: 700; color: ${colors[idx % colors.length]}; margin-bottom: 2px;">📅 ${gem.date}</div>
+                        <div style="font-size: 0.84rem; color: #f1f5f9; font-weight: 500; line-height: 1.3;">"${gem.text}"</div>
+                    `;
+                    gemsBox.appendChild(card);
+                });
+            }
+
+            // Slide 11: Finale Share Card
+            const cardYearEl = document.getElementById('wrappedCardYear');
+            if (cardYearEl) cardYearEl.innerText = `${currentWrappedStats.year || 2026} Daily Journal Recap`;
+            const cardSummary = document.getElementById('wrappedCardSummary');
+            if (cardSummary) {
+                cardSummary.innerHTML = `
+                    <b>${currentWrappedStats.total} good memories</b> documented this year.<br>
+                    Longest streak: <b>${currentWrappedStats.longestStreak} days in a row</b>.<br>
+                    Total written: <b>${(currentWrappedStats.totalWords || 0).toLocaleString()} words</b> (~ ${currentWrappedStats.pagesCount || 1} book pages).<br>
+                    Archetype: <b>${(currentWrappedStats.archetype && currentWrappedStats.archetype.title) || 'The Mindful Chronicler'}</b>.
+                `;
+            }
+
+            // Reset pause state
+            wrappedPaused = false;
+            const pauseBtn = document.getElementById('wrappedPauseBtn');
+            if (pauseBtn) pauseBtn.innerText = '⏸';
+
+            // Log full algorithm breakdown to console for testing
+            console.group("✨ MemStore Wrapped Algorithm Analysis (" + (currentWrappedStats.isDemo ? "Sample Demo" : "Real Journal Data") + ")");
+            console.log("📅 Year:", currentWrappedStats.year);
+            console.log("🌱 First Entry (Day 1):", currentWrappedStats.firstDate, "-", currentWrappedStats.firstText);
+            console.log("📊 Days Sealed:", currentWrappedStats.total, "(" + currentWrappedStats.rate + "% of year)");
+            console.log("🔥 Longest Streak:", currentWrappedStats.longestStreak, "consecutive days");
+            console.log("✍️ Total Words Written:", currentWrappedStats.totalWords, "words (~" + currentWrappedStats.pagesCount + " book pages)");
+            console.log("💬 Average Words / Entry:", currentWrappedStats.avgWords, "words");
+            console.log("🎭 Journaling Archetype:", (currentWrappedStats.archetype && currentWrappedStats.archetype.title) + " " + (currentWrappedStats.archetype && currentWrappedStats.archetype.icon));
+            console.log("🏆 Peak Grateful Month:", currentWrappedStats.topMonthName, "(" + currentWrappedStats.topMonthCount + " entries)");
+            console.log("🍃 Four Seasons:", currentWrappedStats.seasonHighlights);
+            console.log("⭐ Spotlight Memory:", currentWrappedStats.spotlightDate, "-", currentWrappedStats.spotlightText, currentWrappedStats.isUserStarred ? "[Starred by User]" : "[Auto-Ranked by Emotion/Effort]");
+            console.log("⏳ Mid-Year Flashback (~6mo ago):", currentWrappedStats.throwbackDate, "-", currentWrappedStats.throwbackText);
+            console.log("✨ 3 Forgotten Micro-Gems:", currentWrappedStats.microGems);
+            console.groupEnd();
+
+            // Render Segmented Progress Bars (12 Bars)
+            const barsContainer = document.getElementById('wrappedBars');
+            barsContainer.innerHTML = '';
+            for (let i = 0; i < WRAPPED_TOTAL_SLIDES; i++) {
+                const b = document.createElement('div');
+                b.className = 'wrapped-bar';
+                b.innerHTML = '<div class="wrapped-bar-fill"></div>';
+                barsContainer.appendChild(b);
+            }
+
+            document.getElementById('wrappedOverlay').classList.add('active');
+            showWrappedSlide(0);
+        }
+
+        function closeMemStoreWrapped() {
+            clearTimeout(wrappedTimer);
+            document.getElementById('wrappedOverlay').classList.remove('active');
+        }
+
+        function showWrappedSlide(index) {
+            clearTimeout(wrappedTimer);
+            wrappedSlideIdx = index;
+
+            // Update Progress bars
+            const bars = document.querySelectorAll('.wrapped-bar-fill');
+            bars.forEach((b, i) => {
+                b.style.transition = 'none';
+                if (i < index) {
+                    b.classList.add('done');
+                    b.style.width = '100%';
+                } else {
+                    b.classList.remove('done');
+                    b.style.width = '0%';
+                }
+            });
+
+            // Update Slides Visibility
+            for (let i = 0; i < WRAPPED_TOTAL_SLIDES; i++) {
+                const slide = document.getElementById(`wrappedSlide${i}`);
+                if (slide) slide.classList.toggle('active', i === index);
+            }
+
+            playStoryChime();
+
+            // Start timer for current slide
+            const curBar = bars[index];
+            if (curBar && !wrappedPaused) {
+                setTimeout(() => {
+                    curBar.style.transition = `width ${WRAPPED_DURATION}ms linear`;
+                    curBar.style.width = '100%';
+                }, 40);
+
+                wrappedStartTime = Date.now();
+                wrappedRemaining = WRAPPED_DURATION;
+                wrappedTimer = setTimeout(() => {
+                    nextWrappedSlide();
+                }, WRAPPED_DURATION);
+            }
+        }
+
+        function nextWrappedSlide() {
+            if (wrappedSlideIdx < WRAPPED_TOTAL_SLIDES - 1) {
+                showWrappedSlide(wrappedSlideIdx + 1);
+            } else {
+                clearTimeout(wrappedTimer);
+            }
+        }
+
+        function prevWrappedSlide() {
+            if (wrappedSlideIdx > 0) {
+                showWrappedSlide(wrappedSlideIdx - 1);
+            }
+        }
+
+        function toggleWrappedPause() {
+            wrappedPaused = !wrappedPaused;
+            const btn = document.getElementById('wrappedPauseBtn');
+            btn.innerText = wrappedPaused ? '▶' : '⏸';
+
+            const bars = document.querySelectorAll('.wrapped-bar-fill');
+            const curBar = bars[wrappedSlideIdx];
+
+            if (wrappedPaused) {
+                clearTimeout(wrappedTimer);
+                if (curBar) {
+                    const computedWidth = window.getComputedStyle(curBar).width;
+                    curBar.style.transition = 'none';
+                    curBar.style.width = computedWidth;
+                }
+            } else {
+                showWrappedSlide(wrappedSlideIdx);
+            }
+        }
+
+        function toggleWrappedSound() {
+            wrappedSound = !wrappedSound;
+            const btn = document.getElementById('wrappedSoundBtn');
+            btn.innerText = wrappedSound ? '🔊' : '🔇';
+        }
+
+        async function shareWrappedSummary() {
+            if (!currentWrappedStats) return;
+            const text = `✨ My MemStore Wrapped ✨\n🌟 ${currentWrappedStats.total} good memories recorded\n🔥 ${currentWrappedStats.longestStreak}-day gratitude streak\n📚 ${(currentWrappedStats.totalWords || 0).toLocaleString()} words written\n🎭 Persona: ${(currentWrappedStats.archetype && currentWrappedStats.archetype.title) || 'The Mindful Chronicler'}\n\nOne good thing a day. Relived all at once. #MemStore`;
+
+            if (navigator.share) {
+                try {
+                    await navigator.share({
+                        title: 'My MemStore Wrapped',
+                        text: text,
+                        url: 'https://jenishestmoizavut.github.io/MemStore/'
+                    });
+                    return;
+                } catch (_) {}
+            }
+
+            try {
+                await navigator.clipboard.writeText(text);
+                alert("Copied your Wrapped summary to clipboard! Paste it anywhere to share. 🌟");
+            } catch (_) {
+                alert(text);
+            }
+        }
+
+        // Keyboard navigation for Wrapped & Day-by-Day Reader
+        document.addEventListener('keydown', (e) => {
+            const wrappedOverlay = document.getElementById('wrappedOverlay');
+            if (wrappedOverlay && wrappedOverlay.classList.contains('active')) {
+                if (e.key === 'Escape') closeMemStoreWrapped();
+                else if (e.key === 'ArrowRight') nextWrappedSlide();
+                else if (e.key === 'ArrowLeft') prevWrappedSlide();
+                else if (e.key === ' ') { e.preventDefault(); toggleWrappedPause(); }
+                return;
+            }
+
+            // Reader navigation when reviewing memories
+            const reader = document.getElementById('reader');
+            if (reader && reader.style.display !== 'none' && document.getElementById('screen-unlocked').classList.contains('active')) {
+                if (e.key === 'ArrowRight') moveReader(1);
+                else if (e.key === 'ArrowLeft') moveReader(-1);
+            }
+        });
+
+        // =========================================
+        // WRAPPED DEV STUDIO CONTROLLER & PRESETS
+        // =========================================
+        const WRAPPED_PRESETS = {
+            legend: {
+                year: 2026,
+                total: 365,
+                streak: 89,
+                words: 7850,
+                archetypeTitle: "The Midnight Philosopher",
+                archetypeIcon: "🌙",
+                archetypeDesc: "You reflect on life in the stillness of the late hours, finding clarity after the world quiets down.",
+                topMonth: "December",
+                topMonthQuote: "Completed 365 full days of gratitude. A whole year of noticing the light.",
+                spring: "Cherry blossoms peaked. Sat by the lake for an hour just listening.",
+                summer: "Late night road trip to the coast, watched the sunrise over the ocean.",
+                autumn: "Rain tapping on the window with hot apple cider and old books.",
+                winter: "Snow falling quietly outside. Completed 365 full days of gratitude.",
+                spotlightDate: "October 14",
+                spotlightText: "Walked through golden fallen leaves holding hands in the quiet autumn breeze. Felt completely at peace.",
+                firstDate: "January 1, 2026",
+                firstText: "Started my 365-day journal with a warm cup of coffee and fresh hopes.",
+                throwbackDate: "June 19",
+                throwbackText: "Midnight road trip to the coast, watched the sunrise over the ocean."
+            },
+            casual: {
+                year: 2026,
+                total: 142,
+                streak: 21,
+                words: 3420,
+                archetypeTitle: "The Morning Light Seeker",
+                archetypeIcon: "☀️",
+                archetypeDesc: "You start your days with intention, greeting the world with an open heart and early gratitude.",
+                topMonth: "July",
+                topMonthQuote: "Rooftop barbecue with childhood friends singing 2000s classics under fairy lights.",
+                spring: "First warm sunny afternoon reading in the park with iced matcha.",
+                summer: "Rooftop barbecue with childhood friends singing 2000s classics under fairy lights.",
+                autumn: "Baked warm cinnamon rolls on a chilly Sunday morning.",
+                winter: "Cozy movie marathon wrapped in blankets while the storm passed.",
+                spotlightDate: "July 28",
+                spotlightText: "Shipped a side project I spent months building. It actually works and friends loved it!",
+                firstDate: "January 1, 2026",
+                firstText: "Decided to start journaling again. Hoping to capture at least 100 days.",
+                throwbackDate: "April 12",
+                throwbackText: "Adopted a stray kitten that decided our front porch was home."
+            },
+            summer: {
+                year: 2026,
+                total: 85,
+                streak: 27,
+                words: 1980,
+                archetypeTitle: "The Mindful Chronicler",
+                archetypeIcon: "☕",
+                archetypeDesc: "You pause in the middle of life's rush to savor the small victories and good people around you.",
+                topMonth: "August",
+                topMonthQuote: "Swimming in the lake under a golden pink sunset with friends.",
+                spring: "Morning jog when the flowers were just opening up.",
+                summer: "Swimming in the lake under a golden pink sunset with friends.",
+                autumn: "Long bike ride through the park under amber maple leaves.",
+                winter: "Warm cup of cocoa after walking through the holiday market lights.",
+                spotlightDate: "August 15",
+                spotlightText: "Stargazing on a clear warm summer night, spotted 3 shooting stars.",
+                firstDate: "March 1, 2026",
+                firstText: "First warm breeze of the year. Time to begin a fresh journal.",
+                throwbackDate: "May 8",
+                throwbackText: "Cherry blossoms in full bloom, everything felt peaceful today."
+            },
+            starter: {
+                year: 2026,
+                total: 21,
+                streak: 7,
+                words: 480,
+                archetypeTitle: "The Gentle Observer",
+                archetypeIcon: "🌱",
+                archetypeDesc: "Taking the first steps of a mindful journey. One good thing every day.",
+                topMonth: "January",
+                topMonthQuote: "Started my MemStore 365-day journal. One good thing every day.",
+                spring: "Noticed the first green buds on the trees outside my window.",
+                summer: "First cold iced coffee of the warm season.",
+                autumn: "Bought a cozy oversized knit sweater for the chilly days ahead.",
+                winter: "Started my MemStore 365-day journal. One good thing every day.",
+                spotlightDate: "January 1",
+                spotlightText: "Started the 365-day journal with a warm cup of coffee and high hopes.",
+                firstDate: "January 1, 2026",
+                firstText: "Started the 365-day journal with a warm cup of coffee and high hopes.",
+                throwbackDate: "January 18",
+                throwbackText: "Late night walk in the freezing cold talking about life and the future."
+            }
+        };
+
+        function openWrappedStudio() {
+            if (document.getElementById('wrappedOverlay').classList.contains('active')) {
+                toggleWrappedPause();
+            }
+            document.getElementById('wrappedStudioModal').classList.add('active');
+        }
+
+        function closeWrappedStudio() {
+            document.getElementById('wrappedStudioModal').classList.remove('active');
+        }
+
+        function applyWrappedPreset(key) {
+            const p = WRAPPED_PRESETS[key];
+            if (!p) return;
+            document.getElementById('studioYear').value = p.year;
+            document.getElementById('studioTotal').value = p.total;
+            document.getElementById('studioStreak').value = p.streak;
+            document.getElementById('studioTopMonth').value = p.topMonth;
+            document.getElementById('studioSpring').value = p.spring;
+            document.getElementById('studioSummer').value = p.summer;
+            document.getElementById('studioAutumn').value = p.autumn;
+            document.getElementById('studioWinter').value = p.winter;
+            document.getElementById('studioSpotlightDate').value = p.spotlightDate;
+            document.getElementById('studioSpotlightText').value = p.spotlightText;
+
+            document.querySelectorAll('.studio-chip').forEach(c => c.classList.remove('active'));
+            const chip = document.getElementById(`chip-${key}`);
+            if (chip) chip.classList.add('active');
+        }
+
+        function launchCustomWrappedFromStudio() {
+            const year = parseInt(document.getElementById('studioYear').value) || 2026;
+            const total = parseInt(document.getElementById('studioTotal').value) || 0;
+            const streak = parseInt(document.getElementById('studioStreak').value) || 0;
+            const topMonthName = document.getElementById('studioTopMonth').value || "October";
+            const rate = Math.min(100, Math.round((total / 365) * 100));
+
+            const totalWords = total * 22;
+            const pagesCount = (totalWords / 250).toFixed(1);
+            const avgWords = 22;
+
+            const archetype = {
+                title: streak > 40 ? "The Dedicated Chronicler" : (total > 100 ? "The Midnight Philosopher" : "The Mindful Chronicler"),
+                icon: streak > 40 ? "🛡️" : (total > 100 ? "🌙" : "☕"),
+                desc: "You pause in the middle of life's rush to savor the small victories and good people around you."
+            };
+
+            const seasonHighlights = [
+                { season: "Spring 🌸", date: `April ${year}`, text: document.getElementById('studioSpring').value || "Cherry blossoms in bloom." },
+                { season: "Summer ☀️", date: `July ${year}`, text: document.getElementById('studioSummer').value || "Warm ocean breeze at sunset." },
+                { season: "Autumn 🍂", date: `October ${year}`, text: document.getElementById('studioAutumn').value || "Golden leaves and hot cider." },
+                { season: "Winter ❄️", date: `December ${year}`, text: document.getElementById('studioWinter').value || "Snow falling gently outside." }
+            ];
+
+            const spotlightDate = document.getElementById('studioSpotlightDate').value || `October 14, ${year}`;
+            const spotlightText = document.getElementById('studioSpotlightText').value || "A moment that made you smile.";
+
+            const firstDate = `January 1, ${year}`;
+            const firstText = document.getElementById('studioSpring').value || "Started my journal with fresh intentions.";
+
+            const throwbackDate = `June 19, ${year}`;
+            const throwbackText = "Midnight road trip to the coast, watched the sunrise over the ocean.";
+
+            const microGems = [
+                { date: `March 24, ${year}`, text: "First warm sunny afternoon reading in the park with iced matcha." },
+                { date: `July 4, ${year}`, text: "Fireworks on the rooftop with everyone singing along to old songs." },
+                { date: `October 31, ${year}`, text: "Spooky movie marathon with hot cider and all the snacks." }
+            ];
+
+            const customStats = {
+                year,
+                total,
+                rate,
+                longestStreak: streak,
+                totalWords,
+                pagesCount,
+                avgWords,
+                archetype,
+                topMonthName,
+                topMonthCount: Math.ceil(total / 3.5),
+                topMonthQuote: document.getElementById('studioAutumn').value || "Golden leaves and hot cider.",
+                seasonHighlights,
+                spotlightDate,
+                spotlightText,
+                isUserStarred: true,
+                firstDate,
+                firstText,
+                throwbackDate,
+                throwbackText,
+                microGems,
+                isDemo: true
+            };
+
+            closeWrappedStudio();
+            openMemStoreWrapped(false, customStats);
+        }
+
+        async function seedSampleVaultFromStudio() {
+            const year = parseInt(document.getElementById('studioYear').value) || new Date().getFullYear();
+            const total = Math.min(365, parseInt(document.getElementById('studioTotal').value) || 50);
+
+            if (!memData) {
+                memData = { year: year, entries: {}, drafts: {} };
+            }
+            memData.year = year;
+            if (!memData.entries) memData.entries = {};
+            if (!memData.starred) memData.starred = {};
+
+            const sampleQuotes = [
+                document.getElementById('studioSpring').value || "Spring blossoms in bloom.",
+                document.getElementById('studioSummer').value || "Beach day with friends at sunset.",
+                document.getElementById('studioAutumn').value || "Crisp sweater weather and hot cider.",
+                document.getElementById('studioWinter').value || "Warm fireplace on a cold evening.",
+                "Morning coffee with quiet thoughts before the world woke up.",
+                "Shared a great laugh with good friends until our stomachs hurt.",
+                "Cooked a delicious homemade meal from scratch.",
+                "Walked through the park under golden sunny skies.",
+                "Finished reading an inspiring book that changed my outlook."
+            ];
+
+            const daysInYear = ((year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0)) ? 366 : 365;
+            const step = Math.max(1, Math.floor(daysInYear / total));
+
+            let count = 0;
+            for (let i = 0; i < daysInYear && count < total; i += step) {
+                const d = new Date(year, 0, 1 + i);
+                const yyyy = d.getFullYear();
+                const mm = String(d.getMonth() + 1).padStart(2, '0');
+                const dd = String(d.getDate()).padStart(2, '0');
+                const dStr = `${yyyy}-${mm}-${dd}`;
+                memData.entries[dStr] = sampleQuotes[count % sampleQuotes.length];
+                count++;
+            }
+
+            // Star the mid-year highlight
+            const sampleDates = Object.keys(memData.entries).sort();
+            if (sampleDates.length > 3) {
+                const midDate = sampleDates[Math.floor(sampleDates.length * 0.65)];
+                memData.starred[midDate] = true;
+            }
+
+            await saveToDB('activeVault', memData);
+            alert(`✨ Seeded ${count} memories into your ${year} journal! Your calendar grid is now populated.`);
+            checkAppState();
+        }
+
+        async function clearTestSeedFromStudio() {
+            if (confirm("Reset current active journal memories?")) {
+                if (memData) {
+                    memData.entries = {};
+                    memData.starred = {};
+                }
+                await saveToDB('activeVault', memData);
+                alert("Journal entries cleared.");
+                checkAppState();
+            }
+        }
+
+        
+        // =========================================
+        // YEAR-END ROLLOVER & NEW YEAR CONTROLLER
+        // =========================================
+        function showYearEndCelebrationModal() {
+            const yr = (memData && memData.startDate) ? new Date(memData.startDate).getFullYear() : (new Date().getFullYear());
+            const yrLabel = document.getElementById('yearEndCelebrationYear');
+            if (yrLabel) yrLabel.innerText = yr;
+            const modal = document.getElementById('yearEndModal');
+            if (modal) modal.classList.add('active');
+        }
+
+        function closeYearEndModal() {
+            const modal = document.getElementById('yearEndModal');
+            if (modal) modal.classList.remove('active');
+        }
+
+        function promptStartNextYear() {
+            const curYear = (memData && memData.startDate) ? new Date(memData.startDate).getFullYear() : (new Date().getFullYear());
+            const nextYear = curYear + 1;
+            if (confirm(`Preserve ${curYear} in Previous Years and start your clean ${nextYear} Journal (Jan 1, ${nextYear})?`)) {
+                startNewYearJournal(nextYear);
+            }
+        }
+
+        async function startNewYearJournal(targetYear) {
+            const nextYear = targetYear || (new Date().getFullYear());
+            
+            // 1. Archive current year if it has memories
+            if (memData && Object.keys(memData.entries || {}).length > 0) {
+                archiveCurrentVault();
+            }
+
+            // 2. Setup fresh journal for the new year starting on Jan 1st
+            const startDateStr = `${nextYear}-01-01`;
+            memData = {
+                id: Date.now().toString(),
+                startDate: startDateStr,
+                year: nextYear,
+                entries: {},
+                drafts: {},
+                timestamps: {},
+                starred: {}
+            };
+
+            await saveToDB('activeVault', memData);
+            saveMemoriesToCloud();
+            refreshPreviousYearsButton();
+
+            alert(`🎉 Welcome to your ${nextYear} Journal! Day 1 is ready for your first good memory.`);
+            nav('screen-main');
+            renderApp();
+        }
+
+        // --- DEV SIMULATORS FOR TESTING ROLLOVER UX ---
+        async function simulateDec31Seal() {
+            closeWrappedStudio();
+            const year = new Date().getFullYear();
+            
+            // Setup active journal for this year with entries through Dec 30
+            if (!memData) memData = { year, startDate: `${year}-01-01`, entries: {}, drafts: {}, timestamps: {}, starred: {} };
+            memData.startDate = `${year}-01-01`;
+            
+            // Seed sample memories if empty
+            if (Object.keys(memData.entries).length < 10) {
+                for (let m = 1; m <= 12; m++) {
+                    const mm = String(m).padStart(2, '0');
+                    memData.entries[`${year}-${mm}-15`] = `Good day in month ${m}`;
+                }
+            }
+            
+            // Dec 31 final date
+            const dec31 = `${year}-12-31`;
+            delete memData.entries[dec31];
+            memData.drafts[dec31] = "New Year's Eve: Standing at the edge of the year, feeling deeply grateful for every lesson and every smile.";
+            
+            await saveToDB('activeVault', memData);
+            nav('screen-main');
+            renderApp();
+            openEditor(dec31);
+            alert(`✨ Simulated Dec 31: Your final draft is ready in the editor. Click 'Seal' to experience the midnight rollover celebration!`);
+        }
+
+        async function simulateJan1Unlock() {
+            closeWrappedStudio();
+            window._simulatedRollover = true;
+            const year = new Date().getFullYear();
+            if (!memData) memData = { year, startDate: `${year}-01-01`, entries: {}, drafts: {}, timestamps: {}, starred: {} };
+            memData.entries[`${year}-12-31`] = "Looking back on 365 days of growth. We made it.";
+            await saveToDB('activeVault', memData);
+            showYearEndCelebrationModal();
+        }
+
+        window.onload = () => { bootApp(); initConnectivityWatcher(); setTimeout(openWrappedStudio, 350); };
+    </script>
+<footer style="margin-top: auto; padding: 40px 0 20px 0; text-align: center; opacity: 0.4; font-size: 0.8rem; letter-spacing: 0.5px;">
+    <p style="margin: 0;">© 2026 Jenish</p>
+    <p style="margin: 5px 0 0 0;">Created by Jenish with Gemini & ChatGPT</p>
+    <p style="margin: 8px 0 0 0;"><a href="privacy.html" style="color: inherit;">Privacy Policy</a></p>
+    <img src="https://hits.sh/jenishestmoizavut.github.io/MemStore.svg?view=today-total" 
+     style="display: none;" 
+     alt="hidden-counter">
+</footer>	
+    
+
+    <!-- MEMSTORE WRAPPED DEV STUDIO MODAL -->
+    
+    <!-- YEAR-END CELEBRATION MODAL -->
+    <div id="yearEndModal" class="studio-modal-overlay" role="dialog" aria-modal="true">
+        <div class="studio-modal-card" style="text-align: center; max-width: 460px; padding: 28px 22px;">
+            <div style="font-size: 3.5rem; margin-bottom: 10px; animation: floatAnim 2.5s ease-in-out infinite;">🎉</div>
+            <h2 style="font-size: 1.8rem; font-weight: 800; margin: 0 0 8px 0; color: #fff;">
+                <span class="wrapped-gradient-text" id="yearEndCelebrationYear">Year</span> Complete!
+            </h2>
+            <p style="font-size: 0.92rem; color: #cbd5e1; line-height: 1.5; margin: 0 0 20px 0;">
+                You showed up, held onto the good things, and reached the finish line. Your 365 days of light are now fully unlocked.
+            </p>
+
+            <div style="display: flex; flex-direction: column; gap: 10px; width: 100%;">
+                <button class="primary-btn" onclick="closeYearEndModal(); launchWrappedWithWarpIntro(false);" style="background: linear-gradient(135deg, #6366f1, #ec4899); border: none; font-weight: 800; font-size: 1rem; padding: 15px; box-shadow: 0 8px 25px -4px rgba(236,72,153,0.5);">
+                    ✨ Watch Your Annual Wrapped (12 Slides)
+                </button>
+                <button class="secondary-btn" onclick="closeYearEndModal(); enterTimeCapsule();" style="padding: 12px; font-weight: 700;">
+                    📖 Browse All 365 Days
+                </button>
+                <button class="secondary-btn" onclick="closeYearEndModal(); promptStartNextYear();" style="padding: 12px; color: #818cf8; border-color: rgba(99,102,241,0.4);">
+                    🌱 Start Next Year's Journal
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="wrappedStudioModal" class="studio-modal-overlay" role="dialog" aria-modal="true">
+        <div class="studio-modal-card">
+            <div class="studio-header">
+                <div class="studio-title-wrap">
+                    <h2 class="studio-title">🛠️ Wrapped Dev Studio</h2>
+                    <span class="studio-badge">12 Slides</span>
+                </div>
+                <button class="wrapped-ctrl-btn" onclick="closeWrappedStudio()" title="Close Studio" style="font-size: 1.1rem; width: 32px; height: 32px;">✕</button>
+            </div>
+            <p class="studio-sub">Test your 12-slide annual recap with customizable stats, quotes, archetypes, and multi-chapter throwbacks!</p>
+
+            <!-- Presets -->
+            <div class="studio-section-label">⚡ Quick Presets</div>
+            <div class="studio-preset-chips">
+                <button class="studio-chip" id="chip-legend" onclick="applyWrappedPreset('legend')">🏆 365 Legend</button>
+                <button class="studio-chip" id="chip-casual" onclick="applyWrappedPreset('casual')">🌿 Casual Vibe</button>
+                <button class="studio-chip" id="chip-summer" onclick="applyWrappedPreset('summer')">☀️ Summer Glow</button>
+                <button class="studio-chip" id="chip-starter" onclick="applyWrappedPreset('starter')">🐣 Starter</button>
+            </div>
+
+            <!-- Numbers Grid -->
+            <div class="studio-section-label">📊 Core Journal Stats</div>
+            <div class="studio-form-grid">
+                <div class="studio-field">
+                    <label for="studioYear">Journal Year</label>
+                    <input type="number" id="studioYear" class="studio-input" value="2026">
+                </div>
+                <div class="studio-field">
+                    <label for="studioTotal">Total Sealed Days</label>
+                    <input type="number" id="studioTotal" class="studio-input" value="365" min="1" max="366">
+                </div>
+                <div class="studio-field">
+                    <label for="studioStreak">Longest Day Streak</label>
+                    <input type="number" id="studioStreak" class="studio-input" value="89" min="1" max="366">
+                </div>
+                <div class="studio-field">
+                    <label for="studioTopMonth">Peak Grateful Month</label>
+                    <select id="studioTopMonth" class="studio-select">
+                        <option value="January">January</option>
+                        <option value="February">February</option>
+                        <option value="March">March</option>
+                        <option value="April">April</option>
+                        <option value="May">May</option>
+                        <option value="June">June</option>
+                        <option value="July">July</option>
+                        <option value="August">August</option>
+                        <option value="September">September</option>
+                        <option value="October" selected>October</option>
+                        <option value="November">November</option>
+                        <option value="December">December</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Seasonal Highlights -->
+            <div class="studio-section-label">🌸 Four Seasons Highlights</div>
+            <div class="studio-form-grid">
+                <div class="studio-field studio-col-full">
+                    <label for="studioSpring">🌸 Spring Memory</label>
+                    <input type="text" id="studioSpring" class="studio-input" value="Cherry blossoms peaked. Sat by the lake for an hour just listening.">
+                </div>
+                <div class="studio-field studio-col-full">
+                    <label for="studioSummer">☀️ Summer Memory</label>
+                    <input type="text" id="studioSummer" class="studio-input" value="Late night road trip to the coast, watched the sunrise over the ocean.">
+                </div>
+                <div class="studio-field studio-col-full">
+                    <label for="studioAutumn">🍂 Autumn Memory</label>
+                    <input type="text" id="studioAutumn" class="studio-input" value="Rain tapping on the window with hot apple cider and old books.">
+                </div>
+                <div class="studio-field studio-col-full">
+                    <label for="studioWinter">❄️ Winter Memory</label>
+                    <input type="text" id="studioWinter" class="studio-input" value="Snow falling quietly outside. Completed 365 full days of gratitude.">
+                </div>
+            </div>
+
+            <!-- Spotlight Memory -->
+            <div class="studio-section-label">⭐ Spotlight Golden Memory (Slide 8)</div>
+            <div class="studio-form-grid">
+                <div class="studio-field">
+                    <label for="studioSpotlightDate">Date</label>
+                    <input type="text" id="studioSpotlightDate" class="studio-input" value="October 14">
+                </div>
+                <div class="studio-field studio-col-full">
+                    <label for="studioSpotlightText">Spotlight Quote</label>
+                    <textarea id="studioSpotlightText" class="studio-textarea">Walked through golden fallen leaves holding hands in the quiet autumn breeze. Felt completely at peace.</textarea>
+                </div>
+            </div>
+
+            
+            <!-- Year Rollover Simulator -->
+            <div class="studio-section-label">🎆 Test Year Rollover UX (Dec 31 &rarr; Jan 1)</div>
+            <div class="studio-row-btns" style="margin-bottom: 10px;">
+                <button class="studio-btn-sub" onclick="simulateDec31Seal()" style="color: #fde047; border-color: rgba(250,204,21,0.4);" title="Test writing the final Dec 31 entry and sealing at midnight">
+                    ✍️ Test Final Seal (Dec 31)
+                </button>
+                <button class="studio-btn-sub" onclick="simulateJan1Unlock()" style="color: #a7f3d0; border-color: rgba(52,211,153,0.4);" title="Test waking up on Jan 1 00:00 with year unlocked">
+                    🕛 Test Jan 1 Rollover
+                </button>
+            </div>
+
+            <!-- Actions -->
+            <div class="studio-actions-group">
+                <button class="studio-btn-launch" onclick="launchCustomWrappedFromStudio()">
+                    <span>✨ Launch 12-Slide Wrapped Story</span>
+                    <span>▶</span>
+                </button>
+                <div class="studio-row-btns">
+                    <button class="studio-btn-sub" onclick="seedSampleVaultFromStudio()" title="Inject these memories into the actual calendar database">
+                        📥 Seed Calendar (DB)
+                    </button>
+                    <button class="studio-btn-sub studio-btn-danger-sub" onclick="clearTestSeedFromStudio()" title="Clear entries from active vault">
+                        🧹 Clear Seed
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MEMSTORE 12-SLIDE WRAPPED STORY MODAL -->
+    <div id="wrappedOverlay" class="wrapped-overlay" role="dialog" aria-modal="true">
+        <div class="wrapped-header">
+            <div class="wrapped-bars" id="wrappedBars"></div>
+            <button class="wrapped-ctrl-btn" onclick="openWrappedStudio()" title="Edit in Dev Studio" style="font-size: 0.72rem; width: auto; padding: 0 10px; border-radius: 999px; font-weight: 700; background: rgba(255,255,255,0.15);">🛠️ Studio</button>
+            <button class="wrapped-ctrl-btn" id="wrappedSoundBtn" onclick="toggleWrappedSound()" title="Toggle Sound">🔊</button>
+            <button class="wrapped-ctrl-btn" id="wrappedPauseBtn" onclick="toggleWrappedPause()" title="Pause/Play">⏸</button>
+            <button class="wrapped-ctrl-btn" onclick="closeMemStoreWrapped()" title="Close Wrapped">✕</button>
+        </div>
+
+        <div class="wrapped-tap-left" id="wrappedTapLeft" onclick="prevWrappedSlide()"></div>
+        <div class="wrapped-tap-right" id="wrappedTapRight" onclick="nextWrappedSlide()"></div>
+
+        <div class="wrapped-content" id="wrappedContent">
+            <!-- Slide 0: Intro -->
+            <div class="wrapped-slide" id="wrappedSlide0">
+                <div class="wrapped-pill" id="wrappedSlide0Pill">✨ 2026 Daily Journal Wrapped</div>
+                <h1 class="wrapped-hero-title">Your Year in<br><span class="wrapped-gradient-text">Good Things</span></h1>
+                <p class="subtitle" style="margin-bottom: 24px; color: #cbd5e1; max-width: 380px; margin-left: auto; margin-right: auto;">In a fast-moving world, you stopped every day to write down what truly mattered.</p>
+                <div style="font-size: 3.6rem; margin: 15px 0; animation: floatAnim 3s ease-in-out infinite;">📖</div>
+                <p style="font-size: 0.85rem; color: var(--muted); margin-top: 15px;">Tap anywhere to begin your story &rarr;</p>
+            </div>
+
+            <!-- Slide 1: Throwback #1 - How It Began (Day 1) -->
+            <div class="wrapped-slide" id="wrappedSlide1">
+                <div class="wrapped-pill">🌱 Chapter 1: The Beginning</div>
+                <h2 class="wrapped-hero-title" style="font-size: 1.85rem;">Where your journey<br><span class="wrapped-gradient-text">started this year.</span></h2>
+                <div class="wrapped-memory-box" style="margin-top: 16px;">
+                    <div class="wrapped-memory-date" id="wrappedFirstDate">📅 January 1, 2026</div>
+                    <div class="wrapped-memory-text" id="wrappedFirstText">"Started my 365-day journal with a warm cup of coffee and fresh hopes."</div>
+                </div>
+                <p style="font-size: 0.88rem; color: #94a3b8; margin-top: 18px; line-height: 1.45;">Before the streaks and book pages, you sat down and wrote this very first good thing.</p>
+            </div>
+
+            <!-- Slide 2: Days Sealed / Consistency -->
+            <div class="wrapped-slide" id="wrappedSlide2">
+                <div class="wrapped-pill">📅 Showing Up</div>
+                <h2 class="wrapped-hero-title" style="font-size: 1.85rem;">You recorded<br><span class="wrapped-gradient-text" id="wrappedSlide2TotalText">0 good memories</span></h2>
+                <div class="wrapped-stats-grid" style="margin-top: 20px;">
+                    <div class="wrapped-stat-card">
+                        <div class="wrapped-stat-val" id="wrappedSlide2DaysVal">0</div>
+                        <div class="wrapped-stat-lbl">Days Documented</div>
+                    </div>
+                    <div class="wrapped-stat-card">
+                        <div class="wrapped-stat-val" id="wrappedSlide2RateVal">0%</div>
+                        <div class="wrapped-stat-lbl">Year Captured</div>
+                    </div>
+                </div>
+                <p style="font-size: 0.9rem; color: #94a3b8; margin-top: 20px; line-height: 1.5;">Every single entry was a deliberate choice to look for the light.</p>
+            </div>
+
+            <!-- Slide 3: Unstoppable Streak -->
+            <div class="wrapped-slide" id="wrappedSlide3">
+                <div class="wrapped-pill">🔥 The Streak</div>
+                <h2 class="wrapped-hero-title" style="font-size: 1.85rem;">You kept the flame alive for<br><span class="wrapped-gradient-text" id="wrappedSlide3StreakText">0 consecutive days</span></h2>
+                <div style="font-size: 3.8rem; margin: 15px 0; animation: floatAnim 2.5s ease-in-out infinite;">🔥</div>
+                <div class="wrapped-memory-box" style="margin-top: 10px;">
+                    <div style="font-size: 0.82rem; font-weight: 700; color: #f59e0b; margin-bottom: 4px;">UNBROKEN CONSISTENCY</div>
+                    <div style="font-size: 0.92rem; color: #cbd5e1; line-height: 1.4;">Showing up day after day is where gratitude stops being an effort and becomes second nature.</div>
+                </div>
+            </div>
+
+            <!-- Slide 4: Total Words Written -->
+            <div class="wrapped-slide" id="wrappedSlide4">
+                <div class="wrapped-pill">✍️ Volume of Thoughts</div>
+                <h2 class="wrapped-hero-title" style="font-size: 1.85rem;">You wrote over<br><span class="wrapped-gradient-text" id="wrappedSlide4WordsText">0 words</span></h2>
+                <div class="wrapped-stats-grid" style="margin-top: 20px;">
+                    <div class="wrapped-stat-card">
+                        <div class="wrapped-stat-val" id="wrappedSlide4PagesVal">~0</div>
+                        <div class="wrapped-stat-lbl">Book Pages Written 📚</div>
+                    </div>
+                    <div class="wrapped-stat-card">
+                        <div class="wrapped-stat-val" id="wrappedSlide4AvgVal">0</div>
+                        <div class="wrapped-stat-lbl">Avg Words Per Entry 💬</div>
+                    </div>
+                </div>
+                <p style="font-size: 0.9rem; color: #94a3b8; margin-top: 20px;">You didn't just live this year. You authored it.</p>
+            </div>
+
+            <!-- Slide 5: Journaling Archetype -->
+            <div class="wrapped-slide" id="wrappedSlide5">
+                <div class="wrapped-pill">🎭 Your Journaling Vibe</div>
+                <h2 class="wrapped-hero-title" style="font-size: 1.8rem;">Your Persona:<br><span class="wrapped-gradient-text" id="wrappedArchetypeTitle">The Mindful Chronicler</span></h2>
+                <div id="wrappedArchetypeIcon" style="font-size: 3.6rem; margin: 12px 0; animation: floatAnim 3s ease-in-out infinite;">🌙</div>
+                <div style="background: rgba(30, 41, 59, 0.55); border: 1px solid rgba(255,255,255,0.12); border-radius: 18px; padding: 16px 20px; margin-top: 8px;">
+                    <p id="wrappedArchetypeDesc" style="font-size: 0.92rem; color: #cbd5e1; line-height: 1.5; margin: 0;"></p>
+                </div>
+            </div>
+
+            <!-- Slide 6: Peak Grateful Month -->
+            <div class="wrapped-slide" id="wrappedSlide6">
+                <div class="wrapped-pill">🏆 Peak Chapter</div>
+                <h2 class="wrapped-hero-title" style="font-size: 1.85rem;"><span class="wrapped-gradient-text" id="wrappedTopMonthTitle">October</span> was your<br>brightest month.</h2>
+                <div style="background: rgba(30, 41, 59, 0.55); border: 1px solid rgba(255,255,255,0.12); border-radius: 18px; padding: 18px; margin: 16px 0; text-align: left;">
+                    <div style="font-size: 0.8rem; font-weight: 700; color: #818cf8; margin-bottom: 6px;" id="wrappedTopMonthCount">Peak Month &bull; 0 memories</div>
+                    <div id="wrappedTopMonthQuote" style="font-size: 0.98rem; color: #f8fafc; font-style: italic; line-height: 1.45;">"A highlight from your favorite month."</div>
+                </div>
+                <p style="font-size: 0.88rem; color: #94a3b8; margin: 0;">Whatever was happening that month, you were truly in your element.</p>
+            </div>
+
+            <!-- Slide 7: Four Seasons Highlights -->
+            <div class="wrapped-slide" id="wrappedSlide7">
+                <div class="wrapped-pill">🍃 Seasonal Evolution</div>
+                <h2 class="wrapped-hero-title" style="font-size: 1.75rem;">Four Seasons of<br><span class="wrapped-gradient-text">Little Victories</span></h2>
+                <div id="wrappedSeasonCards" style="display: flex; flex-direction: column; gap: 8px; width: 100%; margin-top: 10px;"></div>
+            </div>
+
+            <!-- Slide 8: Golden Moment (Spotlight) -->
+            <div class="wrapped-slide" id="wrappedSlide8">
+                <div class="wrapped-pill" id="wrappedSpotlightPill">⭐ Your Golden Moment</div>
+                <h2 class="wrapped-hero-title" style="font-size: 1.85rem;">The moment that<br><span class="wrapped-gradient-text">stands above all.</span></h2>
+                <div class="wrapped-memory-box" id="wrappedSpotlightBox" style="margin-top: 15px;">
+                    <div class="wrapped-memory-date" id="wrappedSpotlightDate">📅 October 14</div>
+                    <div class="wrapped-memory-text" id="wrappedSpotlightText">"Watching the rain from the coffee shop window."</div>
+                    <div id="wrappedSpotlightStarredTag" style="margin-top: 12px; font-size: 0.8rem; font-weight: 700; color: #fde047; display: none; align-items: center; justify-content: center; gap: 5px;">
+                        <span>⭐</span> Marked by you as a Golden Memory
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 9: Throwback #2 - The Mid-Year Time-Machine -->
+            <div class="wrapped-slide" id="wrappedSlide9">
+                <div class="wrapped-pill">⏳ Halfway Through</div>
+                <h2 class="wrapped-hero-title" style="font-size: 1.85rem;">A forgotten afternoon<br><span class="wrapped-gradient-text">from 6 months ago.</span></h2>
+                <div class="wrapped-memory-box" style="margin-top: 16px;">
+                    <div class="wrapped-memory-date" id="wrappedThrowbackDate">📅 June 19</div>
+                    <div class="wrapped-memory-text" id="wrappedThrowbackText">"Midnight road trip to the coast, watched the sunrise over the ocean."</div>
+                </div>
+                <p style="font-size: 0.88rem; color: #94a3b8; margin-top: 16px; line-height: 1.45;">You probably haven't thought about this afternoon in months. Now you get to smile at it all over again.</p>
+            </div>
+
+            <!-- Slide 10: Throwback #3 - Three Forgotten Micro-Gems -->
+            <div class="wrapped-slide" id="wrappedSlide10">
+                <div class="wrapped-pill">✨ Little Victories</div>
+                <h2 class="wrapped-hero-title" style="font-size: 1.75rem;">Three quiet memories<br><span class="wrapped-gradient-text">saved from being lost.</span></h2>
+                <div id="wrappedMicroGemsBox" style="display: flex; flex-direction: column; gap: 8px; width: 100%; margin-top: 12px;"></div>
+                <p style="font-size: 0.82rem; color: #94a3b8; margin-top: 12px; line-height: 1.4;">Without your journal, these moments would have faded. Today, they're right here.</p>
+            </div>
+
+            <!-- Slide 11: Finale & Share Card -->
+            <div class="wrapped-slide" id="wrappedSlide11">
+                <div class="wrapped-pill">🎉 That's a Wrap!</div>
+                <h2 class="wrapped-hero-title" style="font-size: 1.85rem;">A Year to be<br><span class="wrapped-gradient-text">Proud of.</span></h2>
+                
+                <div style="background: rgba(15, 23, 42, 0.75); border: 1px solid rgba(255,255,255,0.15); border-radius: 20px; padding: 18px; margin: 12px 0; text-align: left;">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                        <img src="logo.png" style="width: 32px; height: 32px; border-radius: 8px;">
+                        <div>
+                            <div style="font-weight: 700; font-size: 0.95rem; color: #fff;">MemStore Wrapped</div>
+                            <div style="font-size: 0.75rem; color: var(--muted);" id="wrappedCardYear">365-Day Journal Recap</div>
+                        </div>
+                    </div>
+                    <div id="wrappedCardSummary" style="font-size: 0.88rem; color: #cbd5e1; line-height: 1.45;"></div>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 8px; width: 100%; margin-top: 8px;">
+                    <button class="primary-btn" onclick="shareWrappedSummary()" style="background: linear-gradient(135deg, #6366f1, #ec4899); border: none; font-weight: 700; padding: 13px;">
+                        📤 Share Your Wrapped
+                    </button>
+                    <button class="secondary-btn" onclick="closeMemStoreWrapped(); startDayByDay();" style="padding: 11px;">
+                        📖 Browse All 365 Days
+                    </button>
+                    <button class="secondary-btn" onclick="showWrappedSlide(0)" style="padding: 9px; font-size: 0.82rem; color: var(--muted);">
+                        🔁 Replay From Start
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FLOATING ALWAYS-ON DEV DOCK -->
+    <div id="wrappedDevDock" style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 999999; display: flex; align-items: center; gap: 8px; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1.5px solid rgba(255, 255, 255, 0.25); padding: 6px 14px; border-radius: 999px; box-shadow: 0 10px 30px rgba(0,0,0,0.8), 0 0 25px rgba(99,102,241,0.4);">
+        <button onclick="launchWrappedWithWarpIntro(false)" style="background: linear-gradient(135deg, #6366f1, #ec4899); color: #fff; border: none; padding: 8px 16px; border-radius: 999px; font-weight: 800; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(236,72,153,0.3); font-family: inherit;">
+            ✨ Play My Wrapped
+        </button>
+        <button onclick="openWrappedStudio()" style="background: linear-gradient(135deg, #0ea5e9, #6366f1); color: #fff; border: none; padding: 8px 14px; border-radius: 999px; font-weight: 700; font-size: 0.82rem; cursor: pointer; display: flex; align-items: center; gap: 5px; font-family: inherit;">
+            🛠️ Lab
+        </button>
+        <button onclick="launchWrappedWithWarpIntro(true)" style="background: rgba(255,255,255,0.12); color: #cbd5e1; border: 1px solid rgba(255,255,255,0.2); padding: 8px 12px; border-radius: 999px; font-weight: 600; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 4px; font-family: inherit;">
+            🎭 Demo
+        </button>
+    </div>
+
+</body>
+</html>
