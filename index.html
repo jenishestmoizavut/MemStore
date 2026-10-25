@@ -44,7 +44,7 @@
       "name": "MemStore",
       "url": "https://jenishestmoizavut.github.io/MemStore/",
       "image": "https://jenishestmoizavut.github.io/MemStore/logo.png",
-      "description": "A 365-day time capsule journaling app. Write one good thing daily and unlock your memories at year's end.",
+      "description": "A 365-day daily journaling app. Write one good thing daily and unlock your memories at year's end.",
       "applicationCategory": "LifestyleApplication",
       "operatingSystem": "Any",
       "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
@@ -299,9 +299,9 @@ will-change: transform, opacity;
         }
         .dev-gear { 
             position: fixed; bottom: 15px; right: 15px; width: 30px; height: 30px; 
-            opacity: 0.1; cursor: pointer; transition: 0.3s; color: white; 
+            opacity: 0.95; cursor: pointer; transition: 0.3s; color: white; 
             display: flex; align-items: center; justify-content: center; font-size: 1.2rem; z-index: 100;
-display: none;
+
         }
         .dev-gear:hover { opacity: 1; }
 
@@ -522,7 +522,459 @@ display: none;
     @keyframes connPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
     .conn-banner-text b { color: #fff; }
     .conn-banner-text span { color: var(--muted); }
-    </style>
+    
+    /* =========================================
+       GOLDEN MOMENT (STAR TOGGLE & BADGE)
+       ========================================= */
+    .day-block.starred {
+        border: 1.5px solid #fde047 !important;
+        box-shadow: 0 0 8px rgba(250, 204, 21, 0.7) !important;
+    }
+    .day-block.starred::after {
+        content: '★';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 7px;
+        color: #fde047;
+        line-height: 1;
+        pointer-events: none;
+    }
+    .star-moment-btn {
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        color: #94a3b8;
+        font-size: 0.76rem;
+        font-weight: 700;
+        padding: 5px 12px;
+        border-radius: 999px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        font-family: inherit;
+        user-select: none;
+    }
+    .star-moment-btn:hover {
+        background: rgba(255, 255, 255, 0.12);
+        color: #f1f5f9;
+        transform: translateY(-1px);
+    }
+    .star-moment-btn.active {
+        background: rgba(234, 179, 8, 0.18);
+        border-color: rgba(250, 204, 21, 0.7);
+        color: #fde047;
+        box-shadow: 0 0 14px rgba(234, 179, 8, 0.35);
+    }
+    .star-moment-btn.active .star-icon {
+        filter: drop-shadow(0 0 5px #fde047);
+    }
+
+    /* =========================================
+       MEMSTORE WRAPPED (SPOTIFY-STYLE STORY MODE)
+       ========================================= */
+    .wrapped-overlay {
+        position: fixed;
+        inset: 0;
+        background: radial-gradient(circle at 15% 15%, rgba(99, 102, 241, 0.4), transparent 45%),
+                    radial-gradient(circle at 85% 85%, rgba(236, 72, 153, 0.35), transparent 45%),
+                    radial-gradient(circle at 50% 50%, rgba(14, 165, 233, 0.18), transparent 60%),
+                    #020617;
+        z-index: 10000;
+        display: flex;
+        flex-direction: column;
+        padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+        box-sizing: border-box;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.35s ease;
+        user-select: none;
+        overflow: hidden;
+    }
+    .wrapped-overlay.active {
+        opacity: 1;
+        pointer-events: all;
+    }
+    .wrapped-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 16px;
+        position: relative;
+        z-index: 25;
+    }
+    .wrapped-bars {
+        display: flex;
+        flex: 1;
+        gap: 3px;
+        height: 3px;
+    }
+    .wrapped-bar {
+        flex: 1;
+        background: rgba(255, 255, 255, 0.25);
+        border-radius: 999px;
+        overflow: hidden;
+        height: 100%;
+        position: relative;
+    }
+    .wrapped-bar-fill {
+        background: #fff;
+        height: 100%;
+        width: 0%;
+        box-shadow: 0 0 8px #fff;
+    }
+    .wrapped-bar-fill.done {
+        width: 100%;
+    }
+    .wrapped-ctrl-btn {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        color: #fff;
+        border-radius: 999px;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 0.88rem;
+        transition: background 0.2s;
+    }
+    .wrapped-ctrl-btn:hover {
+        background: rgba(255, 255, 255, 0.25);
+    }
+    .wrapped-tap-left, .wrapped-tap-right {
+        position: absolute;
+        top: 60px;
+        bottom: 0;
+        width: 40%;
+        z-index: 15;
+        cursor: pointer;
+    }
+    .wrapped-tap-left { left: 0; }
+    .wrapped-tap-right { right: 0; width: 60%; }
+    .wrapped-content {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        z-index: 10;
+        max-width: 480px;
+        width: 100%;
+        margin: 0 auto;
+        text-align: center;
+    }
+    .wrapped-slide {
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        animation: wrappedFadeIn 0.38s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .wrapped-slide.active {
+        display: flex;
+    }
+    @keyframes wrappedFadeIn {
+        from { opacity: 0; transform: translateY(12px) scale(0.98); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .wrapped-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 14px;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        font-weight: 800;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        color: #e2e8f0;
+        margin-bottom: 12px;
+        backdrop-filter: blur(8px);
+    }
+    .wrapped-hero-title {
+        font-size: 2.05rem;
+        font-weight: 800;
+        line-height: 1.15;
+        margin: 0 0 12px 0;
+        color: #fff;
+    }
+    .wrapped-gradient-text {
+        background: linear-gradient(135deg, #38bdf8, #a855f7, #ec4899);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    .wrapped-stats-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        width: 100%;
+        margin-top: 14px;
+    }
+    .wrapped-stat-card {
+        background: rgba(30, 41, 59, 0.5);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 18px;
+        padding: 18px 12px;
+        backdrop-filter: blur(12px);
+    }
+    .wrapped-stat-val {
+        font-size: 2rem;
+        font-weight: 800;
+        background: linear-gradient(135deg, #f8fafc, #cbd5e1);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    .wrapped-stat-lbl {
+        font-size: 0.75rem;
+        color: #94a3b8;
+        font-weight: 600;
+        margin-top: 4px;
+    }
+    .wrapped-memory-box {
+        background: rgba(30, 41, 59, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 20px;
+        padding: 20px 18px;
+        backdrop-filter: blur(14px);
+        width: 100%;
+        box-sizing: border-box;
+        text-align: left;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+    }
+    .wrapped-memory-date {
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: #818cf8;
+        margin-bottom: 8px;
+    }
+    .wrapped-memory-text {
+        font-size: 1rem;
+        font-weight: 500;
+        line-height: 1.45;
+        color: #f8fafc;
+        font-style: italic;
+    }
+
+    /* =========================================
+       MEMSTORE WRAPPED DEV STUDIO MODAL
+       ========================================= */
+    .studio-modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(2, 6, 23, 0.88);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        z-index: 10050;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        box-sizing: border-box;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.25s ease;
+    }
+    .studio-modal-overlay.active {
+        opacity: 1;
+        pointer-events: all;
+    }
+    .studio-modal-card {
+        background: #0f172a;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 24px;
+        box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.8), 0 0 40px rgba(99, 102, 241, 0.15);
+        max-width: 540px;
+        width: 100%;
+        max-height: 90vh;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        padding: 24px;
+        box-sizing: border-box;
+        text-align: left;
+        color: #f8fafc;
+        animation: studioScaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes studioScaleUp {
+        from { transform: scale(0.95); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
+    }
+    .studio-modal-card::-webkit-scrollbar { width: 6px; }
+    .studio-modal-card::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); }
+    .studio-modal-card::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 4px; }
+    .studio-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 6px;
+    }
+    .studio-title-wrap {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .studio-title {
+        font-size: 1.25rem;
+        font-weight: 800;
+        margin: 0;
+        background: linear-gradient(135deg, #38bdf8, #818cf8);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    .studio-badge {
+        font-size: 0.65rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        background: rgba(99, 102, 241, 0.2);
+        color: #818cf8;
+        border: 1px solid rgba(99, 102, 241, 0.4);
+        padding: 2px 7px;
+        border-radius: 999px;
+    }
+    .studio-sub {
+        font-size: 0.85rem;
+        color: #94a3b8;
+        margin: 0 0 16px 0;
+        line-height: 1.4;
+    }
+    .studio-section-label {
+        font-size: 0.72rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        color: #64748b;
+        margin: 14px 0 8px 0;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .studio-preset-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-bottom: 14px;
+    }
+    .studio-chip {
+        background: rgba(30, 41, 59, 0.8);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        color: #cbd5e1;
+        padding: 6px 12px;
+        border-radius: 999px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    .studio-chip:hover {
+        background: rgba(99, 102, 241, 0.25);
+        border-color: rgba(99, 102, 241, 0.6);
+        color: #fff;
+        transform: translateY(-1px);
+    }
+    .studio-chip.active {
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.4), rgba(236, 72, 153, 0.3));
+        border-color: #818cf8;
+        color: #fff;
+        box-shadow: 0 0 12px rgba(99, 102, 241, 0.3);
+    }
+    .studio-form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+    .studio-col-full { grid-column: 1 / -1; }
+    .studio-field {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+    .studio-field label {
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .studio-input, .studio-select, .studio-textarea {
+        background: rgba(15, 23, 42, 0.8);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        color: #f8fafc;
+        border-radius: 10px;
+        padding: 9px 12px;
+        font-family: inherit;
+        font-size: 0.85rem;
+        outline: none;
+        transition: border-color 0.2s, box-shadow 0.2s;
+        box-sizing: border-box;
+        width: 100%;
+    }
+    .studio-input:focus, .studio-select:focus, .studio-textarea:focus {
+        border-color: #818cf8;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
+    }
+    .studio-textarea { resize: vertical; min-height: 54px; }
+    .studio-actions-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-top: 20px;
+        padding-top: 16px;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .studio-btn-launch {
+        background: linear-gradient(135deg, #6366f1, #ec4899);
+        color: #fff;
+        border: none;
+        border-radius: 14px;
+        padding: 13px 18px;
+        font-weight: 800;
+        font-size: 0.95rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.5);
+        transition: transform 0.2s, opacity 0.2s;
+    }
+    .studio-btn-launch:hover { transform: translateY(-1px); opacity: 0.95; }
+    .studio-row-btns {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+    }
+    .studio-btn-sub {
+        background: rgba(30, 41, 59, 0.8);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        color: #e2e8f0;
+        border-radius: 12px;
+        padding: 10px 14px;
+        font-weight: 600;
+        font-size: 0.82rem;
+        cursor: pointer;
+        transition: background 0.2s;
+        text-align: center;
+    }
+    .studio-btn-sub:hover { background: rgba(51, 65, 85, 0.9); color: #fff; }
+    .studio-btn-danger-sub {
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        color: #fca5a5;
+    }
+    .studio-btn-danger-sub:hover { background: rgba(239, 68, 68, 0.25); color: #fee2e2; }
+
+</style>
 </head>
 <body>
 <div id="connBanner" class="conn-banner" role="status" aria-live="polite">
@@ -539,7 +991,32 @@ display: none;
             <img src="logo.png" alt="MemStore Logo" style="width: 80px; height: 80px; border-radius: 18px; box-shadow: 0 0 20px var(--accent-glow);">
             <h1 style="margin-top: 10px;">MemStore</h1>
         </div>
-        <p class="subtitle">A 365-day time capsule.<br>Rule #1: Write at least <b>one good thing</b> that happened today.<br>Rule #2: You can't read past entries until the year is up.</p>
+        <p class="subtitle">A 365-day daily journal.<br>Rule #1: Write at least <b>one good thing</b> that happened today.<br>Rule #2: You can't read past entries until the year is up.</p>
+
+        <!-- DEV WRAPPED PROMINENT BANNER -->
+        <div style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.25), rgba(236, 72, 153, 0.25)); border: 1.5px solid rgba(99, 102, 241, 0.5); border-radius: 16px; padding: 18px; margin: 20px 0; text-align: left; box-shadow: 0 10px 25px -5px rgba(99,102,241,0.3);">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                <span style="font-weight: 800; font-size: 1.05rem; color: #fff; display: flex; align-items: center; gap: 8px;">✨ MemStore Wrapped (12-Slide Story)</span>
+                <span style="font-size: 0.7rem; font-weight: 800; text-transform: uppercase; background: #6366f1; color: #fff; padding: 3px 9px; border-radius: 999px; letter-spacing: 0.5px;">12 SLIDES</span>
+            </div>
+            <p style="margin: 0 0 14px 0; font-size: 0.88rem; color: #cbd5e1; line-height: 1.45;">
+                Relive your year with Day 1 beginnings, streaks, word volume, persona, peak seasons, and 3 rich throwback chapters!
+            </p>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+                <button class="primary-btn" onclick="launchWrappedWithWarpIntro(false)" style="padding: 13px; font-size: 0.95rem; font-weight: 800; background: linear-gradient(135deg, #6366f1, #ec4899); border: none; box-shadow: 0 4px 15px rgba(236,72,153,0.3);">
+                    ✨ Play My Wrapped (Real Data)
+                </button>
+                <div style="display: flex; gap: 8px;">
+                    <button class="secondary-btn" onclick="openWrappedStudio()" style="flex: 1; padding: 10px; font-size: 0.82rem; font-weight: 700;">
+                        🛠️ Dev Studio Form
+                    </button>
+                    <button class="secondary-btn" onclick="launchWrappedWithWarpIntro(true)" style="flex: 1; padding: 10px; font-size: 0.82rem;">
+                        🎭 Sample Demo
+                    </button>
+                </div>
+            </div>
+        </div>
+
         
         <div style="background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 12px; padding: 14px; margin-bottom: 24px;">
             <p style="margin: 0; font-size: 0.9rem; color: #a5b4fc;">🛡️ <b>Privacy First:</b> Your memories never leave your device unencrypted. </p>
@@ -547,7 +1024,7 @@ display: none;
 
         <!-- 1. ACTIVE VAULT (Moved to top) -->
         <div id="activeVaultTracker" style="display: none; background: var(--card); padding: 22px; border-radius: 16px; margin-bottom: 16px; border: 1px solid rgba(255,255,255,0.1);">
-            <h3 style="margin: 0 0 15px 0; font-size: 1.2rem; color: var(--accent);">Current Time Capsule</h3>
+            <h3 style="margin: 0 0 15px 0; font-size: 1.2rem; color: var(--accent);">Current Journal</h3>
             <div class="progress-container" style="margin-bottom: 8px;"><div class="progress-bar" id="homeProgressBar"></div></div>
             <div class="progress-text" id="homeProgressText" style="text-align: center; margin-bottom: 18px;">Day X of 365</div>
             <button class="primary-btn" onclick="openActiveVault()">Enter Vault</button>
@@ -679,7 +1156,13 @@ display: none;
             </div>
 
             <div id="editorState">
-                <span class="active-date-label" id="activeDateLabel">Today's Entry</span>
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                    <span class="active-date-label" id="activeDateLabel" style="margin-bottom: 0;">Today's Entry</span>
+                    <button type="button" id="starMomentBtn" class="star-moment-btn" onclick="toggleStarMoment()" title="Flag as Golden Moment for Wrapped">
+                        <span class="star-icon">⭐</span>
+                        <span class="star-label">Golden Moment</span>
+                    </button>
+                </div>
                 <textarea id="entryText" placeholder="What is one good thing that happened?..." oninput="autoSaveDraft()"></textarea>
                 <div class="editor-bottom">
                     <div class="save-status" id="saveStatus">Draft</div>
@@ -692,12 +1175,18 @@ display: none;
                 <div class="sealed-title">Sealed</div>
                 <div class="sealed-date" id="sealedDateLabel">Memory as of Apr 26, 2026</div>
                 <div class="sealed-time" id="sealedTimeLabel">20:27:34</div>
+                <div style="margin: 10px 0 6px 0;">
+                    <button type="button" id="sealedStarBtn" class="star-moment-btn" onclick="toggleStarMoment()" title="Flag as Golden Moment for Wrapped">
+                        <span class="star-icon">⭐</span>
+                        <span class="star-label">Golden Moment</span>
+                    </button>
+                </div>
                 <div id="unsealContainer" style="display: none;"><button class="unseal-btn" onclick="unsealToday()">Edit before the day ends!</button></div>
             </div>
         </div><div id="finalPrompt" class="final-prompt">
             <div class="final-prompt-title">The final seal is ready.</div>
             <p class="final-prompt-copy">Your last entry is locked. Step through when you are ready to open the year.</p>
-            <button class="primary-btn" onclick="enterTimeCapsule()">Enter the Time Machine</button>
+            <button class="primary-btn" onclick="enterTimeCapsule()">Open Your Year Recap</button>
         </div>
 
         <div class="home-menu-bar">
@@ -783,7 +1272,7 @@ display: none;
     </button>
 </div>
         <h1>Previous Years</h1>
-        <p class="subtitle">Return to an older time capsule.</p>
+        <p class="subtitle">Return to an older year's journal.</p>
         <div id="archiveList" class="archive-list"></div>
           </div>
 
@@ -1378,7 +1867,11 @@ display: none;
                 const block = document.createElement('div');
                 block.className = 'day-block';
                 if (blockDateStr > todayStr) block.classList.add('locked');
-                else if (memData.entries[blockDateStr]) { block.classList.add('filled'); block.onclick = () => openEditor(blockDateStr); }
+                else if (memData.entries[blockDateStr]) { 
+                    block.classList.add('filled'); 
+                    if (memData.starred && memData.starred[blockDateStr]) block.classList.add('starred');
+                    block.onclick = () => openEditor(blockDateStr); 
+                }
                 else if (blockDateStr === todayStr) { block.classList.add('today'); block.onclick = () => openEditor(blockDateStr); }
                 else { block.classList.add('missed'); block.onclick = () => openEditor(blockDateStr); }
                 grid.appendChild(block);
@@ -1473,7 +1966,10 @@ display: none;
                 const dateStr = getDateKey(currentBlockDate);
                 blocks[i].className = 'day-block'; 
                 if (dateStr > todayStr) blocks[i].classList.add('locked');
-                else if (memData.entries[dateStr]) blocks[i].classList.add('filled');
+                else if (memData.entries[dateStr]) {
+                    blocks[i].classList.add('filled');
+                    if (memData.starred && memData.starred[dateStr]) blocks[i].classList.add('starred');
+                }
                 else if (dateStr === todayStr) blocks[i].classList.add('today');
                 else blocks[i].classList.add('missed');
             }
@@ -1657,6 +2153,25 @@ display: none;
             document.getElementById('readerCount').innerText = `${readerIndex + 1} of ${readerDates.length}`;
         }
 
+        
+        async function openArchiveWrapped(capsuleId) {
+            const capsule = archives.find(a => a.id === capsuleId);
+            if (!capsule) return;
+            const ok = await requireReauth('Unlock to view this journal', isLockOnArchivesEnabled);
+            if (!ok) return;
+            activeCapsule = capsule;
+            launchWrappedWithWarpIntro(false);
+        }
+
+        async function openArchiveMemories(capsuleId) {
+            const capsule = archives.find(a => a.id === capsuleId);
+            if (!capsule) return;
+            const ok = await requireReauth('Unlock to view this journal', isLockOnArchivesEnabled);
+            if (!ok) return;
+            activeCapsule = capsule;
+            showEOY(capsule);
+        }
+
         async function showArchiveHome() {
             const list = document.getElementById('archiveList');
             list.innerHTML = '';
@@ -1681,9 +2196,9 @@ display: none;
                     const button = document.createElement('button');
                     button.className = index === 0 ? 'primary-btn' : 'secondary-btn';
                     button.style.marginBottom = '12px';
-                    button.textContent = `${capsule.label || getCapsuleLabel(capsule)} Time Capsule`;
+                    button.textContent = `${capsule.label || getCapsuleLabel(capsule)} Journal`;
                     button.onclick = async () => {
-                        const ok = await requireReauth('Unlock to view this time capsule', isLockOnArchivesEnabled);
+                        const ok = await requireReauth('Unlock to view this journal', isLockOnArchivesEnabled);
                         if (ok) triggerWarpSequence(capsule);
                     };
                     list.appendChild(button);
@@ -1695,7 +2210,7 @@ display: none;
         function shareApp() {
             const shareData = {
                 title: 'MemStore',
-                text: 'I am tracking my year in a 365-day time capsule. Build your own vault with MemStore!',
+                text: 'I am tracking my year with MemStore — one good thing a day. Start your journal!',
                 url: window.location.href 
             };
             if (navigator.share) {
@@ -2026,7 +2541,1048 @@ display: none;
                 }
             });
         }        
-        window.onload = () => { bootApp(); initConnectivityWatcher(); };
+        
+        // =========================================
+        // GOLDEN MOMENT (STAR) CONTROLLER
+        // =========================================
+        function toggleStarMoment() {
+            if (!activeEditDate) return;
+            if (!memData) return;
+            if (!memData.starred) memData.starred = {};
+
+            const isCurrentlyStarred = !!memData.starred[activeEditDate];
+            if (isCurrentlyStarred) {
+                delete memData.starred[activeEditDate];
+            } else {
+                memData.starred[activeEditDate] = true;
+            }
+
+            saveToDB('activeVault', memData);
+            saveMemoriesToCloud();
+            updateStarUI();
+            updateGridVisuals();
+        }
+
+        function updateStarUI() {
+            const isStarred = !!(memData && memData.starred && memData.starred[activeEditDate]);
+            const starBtn = document.getElementById('starMomentBtn');
+            const sealedStarBtn = document.getElementById('sealedStarBtn');
+
+            [starBtn, sealedStarBtn].forEach(btn => {
+                if (!btn) return;
+                btn.classList.toggle('active', isStarred);
+                const lbl = btn.querySelector('.star-label');
+                if (lbl) lbl.innerText = isStarred ? 'Golden Moment ⭐' : 'Mark as Golden Moment';
+            });
+        }
+
+        // =========================================
+        // MEMSTORE WRAPPED 12-SLIDE STORY CONTROLLER
+        // =========================================
+        let wrappedTimer = null;
+        let wrappedSlideIdx = 0;
+        const WRAPPED_TOTAL_SLIDES = 12;
+        let wrappedSound = true;
+        let wrappedPaused = false;
+        const WRAPPED_DURATION = 6000; // 6 seconds per slide
+        let wrappedStartTime = 0;
+        let wrappedRemaining = 6000;
+        let currentWrappedStats = null;
+
+        function getDemoWrappedEntries() {
+            const currentYear = new Date().getFullYear();
+            return {
+                [`${currentYear}-01-01`]: "Started my 365-day journal with a warm cup of coffee and fresh hopes.",
+                [`${currentYear}-01-18`]: "Late night walk in the freezing cold talking about life and the future.",
+                [`${currentYear}-02-14`]: "Made homemade pizza with friends, burnt the crust but laughed so much.",
+                [`${currentYear}-03-05`]: "Finally received the news I had been praying for all month.",
+                [`${currentYear}-03-24`]: "First warm sunny afternoon of the year reading in the park with iced matcha.",
+                [`${currentYear}-04-12`]: "Adopted a stray kitten that decided our front porch was home.",
+                [`${currentYear}-05-08`]: "Cherry blossoms in full bloom, everything felt peaceful today.",
+                [`${currentYear}-06-19`]: "Midnight road trip to the coast, watched the sunrise over the ocean.",
+                [`${currentYear}-07-04`]: "Fireworks on the rooftop with everyone singing along to old songs.",
+                [`${currentYear}-07-28`]: "Shipped a side project I spent months building. It actually works and friends loved it!",
+                [`${currentYear}-08-15`]: "Stargazing on a clear summer night, spotted 3 shooting stars.",
+                [`${currentYear}-09-22`]: "First sweater weather day of autumn, rain tapping on the window.",
+                [`${currentYear}-10-14`]: "Walked through golden fallen leaves holding hands in the quiet breeze. Felt completely at peace.",
+                [`${currentYear}-10-31`]: "Spooky movie marathon with hot cider and all the snacks.",
+                [`${currentYear}-11-26`]: "Gathered around the table sharing gratitude for simply being alive.",
+                [`${currentYear}-12-15`]: "Decorating the tree while snow fell gently outside.",
+                [`${currentYear}-12-31`]: "Looking back on 365 days of growth. We made it through."
+            };
+        }
+
+        function computeWrappedStats(entriesObj, dates, isDemo, starredObj = {}, timestampsObj = {}) {
+            const total = dates.length;
+            const rate = Math.min(100, Math.round((total / 365) * 100));
+
+            // 1. Longest Streak
+            let longestStreak = 0;
+            let currentStreak = 0;
+            let prevDate = null;
+
+            for (const dStr of dates) {
+                const cur = new Date(`${dStr}T00:00:00`);
+                if (!prevDate) {
+                    currentStreak = 1;
+                } else {
+                    const diffDays = Math.round((cur - prevDate) / (1000 * 60 * 60 * 24));
+                    if (diffDays === 1) {
+                        currentStreak++;
+                    } else if (diffDays > 1) {
+                        currentStreak = 1;
+                    }
+                }
+                if (currentStreak > longestStreak) longestStreak = currentStreak;
+                prevDate = cur;
+            }
+            if (isDemo && longestStreak < 14) longestStreak = 24;
+
+            // 2. Total Words & Reading Volume
+            let totalWords = 0;
+            dates.forEach(d => {
+                const text = entriesObj[d] || "";
+                totalWords += text.trim().split(/\s+/).filter(Boolean).length;
+            });
+            if (isDemo && totalWords < 200) totalWords = total * 22;
+            const pagesCount = (totalWords / 250).toFixed(1);
+            const avgWords = Math.round(totalWords / Math.max(1, total));
+
+            // 3. Journaling Archetype Persona
+            let archetype = {
+                title: "The Mindful Chronicler",
+                icon: "☕",
+                desc: "You pause in the middle of life's rush to savor the small victories and good people around you."
+            };
+
+            const tsKeys = Object.keys(timestampsObj || {});
+            if (tsKeys.length > 0) {
+                let nightCount = 0, morningCount = 0, afternoonCount = 0;
+                tsKeys.forEach(k => {
+                    const t = timestampsObj[k];
+                    if (typeof t === 'string' && t.includes(':')) {
+                        let h = parseInt(t.split(':')[0], 10);
+                        if (/pm/i.test(t) && h < 12) h += 12;
+                        if (/am/i.test(t) && h === 12) h = 0;
+                        if (h >= 20 || h < 5) nightCount++;
+                        else if (h >= 5 && h < 12) morningCount++;
+                        else afternoonCount++;
+                    }
+                });
+                if (nightCount >= morningCount && nightCount >= afternoonCount) {
+                    archetype = {
+                        title: "The Midnight Philosopher",
+                        icon: "🌙",
+                        desc: "You reflect on life in the stillness of the late hours, finding clarity after the world quiets down."
+                    };
+                } else if (morningCount >= afternoonCount) {
+                    archetype = {
+                        title: "The Morning Light Seeker",
+                        icon: "☀️",
+                        desc: "You start your days with intention, greeting the world with an open heart and early gratitude."
+                    };
+                }
+            } else if (total >= 250) {
+                archetype = {
+                    title: "The Dedicated Chronicler",
+                    icon: "🛡️",
+                    desc: "Unwavering commitment. You built a rare habit of noticing the good in nearly every single day."
+                };
+            }
+
+            // 4. Most active month
+            const monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+            const monthCounts = {};
+            dates.forEach(d => {
+                const m = parseInt(d.split('-')[1], 10) - 1;
+                monthCounts[m] = (monthCounts[m] || 0) + 1;
+            });
+            let topMonthIdx = 0;
+            let maxCount = 0;
+            for (let m = 0; m < 12; m++) {
+                if ((monthCounts[m] || 0) > maxCount) {
+                    maxCount = monthCounts[m];
+                    topMonthIdx = m;
+                }
+            }
+            const topMonthName = monthNames[topMonthIdx];
+            const topMonthDates = dates.filter(d => parseInt(d.split('-')[1], 10) - 1 === topMonthIdx);
+            let topMonthQuote = topMonthDates.length > 0 ? (entriesObj[topMonthDates[Math.floor(topMonthDates.length / 2)]] || "") : "";
+
+            // 5. Four Seasons Highlights
+            const seasons = [
+                { name: "Winter ❄️", months: [11, 0, 1] },
+                { name: "Spring 🌸", months: [2, 3, 4] },
+                { name: "Summer ☀️", months: [5, 6, 7] },
+                { name: "Autumn 🍂", months: [8, 9, 10] }
+            ];
+
+            const seasonHighlights = seasons.map(s => {
+                const matchingDates = dates.filter(d => {
+                    const m = parseInt(d.split('-')[1], 10) - 1;
+                    return s.months.includes(m);
+                });
+                if (matchingDates.length > 0) {
+                    const chosenDate = matchingDates[Math.floor(matchingDates.length / 2)];
+                    return { season: s.name, date: chosenDate, text: entriesObj[chosenDate] };
+                }
+                return null;
+            }).filter(Boolean);
+
+            // 6. Smart Spotlight Memory (Golden Moment)
+            let starredDates = dates.filter(d => starredObj && starredObj[d] && entriesObj[d]);
+            let spotlightDate = null;
+            let spotlightText = "";
+            let isUserStarred = false;
+
+            if (starredDates.length > 0) {
+                starredDates.sort((a, b) => (entriesObj[b] || '').length - (entriesObj[a] || '').length);
+                spotlightDate = starredDates[0];
+                spotlightText = entriesObj[spotlightDate];
+                isUserStarred = true;
+            } else if (dates.length > 0) {
+                const emotionKeywords = [
+                    "finally", "proud", "unforgettable", "best day", "love", "loved", 
+                    "cried", "tears", "grateful", "gratitude", "magical", "dream",
+                    "accomplished", "shipped", "peaceful", "beautiful", "happy", "forever",
+                    "heart", "smile", "sunset", "sunrise", "laugh", "friends"
+                ];
+
+                let bestScore = -1;
+                let bestDate = dates[0];
+
+                dates.forEach(d => {
+                    const text = entriesObj[d] || "";
+                    if (!text) return;
+                    let score = Math.min(text.length, 250) * 0.5;
+                    const exclamations = (text.match(/!/g) || []).length;
+                    score += Math.min(exclamations, 3) * 15;
+                    const lower = text.toLowerCase();
+                    emotionKeywords.forEach(kw => {
+                        if (lower.includes(kw)) score += 20;
+                    });
+                    const month = parseInt(d.split('-')[1], 10);
+                    if (month >= 5 && month <= 10) score += 12;
+
+                    if (score > bestScore) {
+                        bestScore = score;
+                        bestDate = d;
+                    }
+                });
+
+                spotlightDate = bestDate;
+                spotlightText = entriesObj[bestDate] || "A good day worth remembering.";
+            }
+
+            // 7. THROWBACK #1: First Memory of the Year (Day 1 / Earliest Sealed Date)
+            let firstDate = dates[0] || `${new Date().getFullYear()}-01-01`;
+            let firstText = entriesObj[firstDate] || "Started my 365-day journal.";
+
+            // 8. THROWBACK #2: Mid-Year Flashback (from ~5-7 months ago)
+            let throwbackDate = null;
+            let throwbackText = "";
+            const midDates = dates.filter(d => {
+                const m = parseInt(d.split('-')[1], 10);
+                return m >= 5 && m <= 8;
+            });
+            if (midDates.length > 0) {
+                throwbackDate = midDates[Math.floor(midDates.length / 2)];
+                throwbackText = entriesObj[throwbackDate];
+            } else if (dates.length > 2) {
+                throwbackDate = dates[Math.floor(dates.length * 0.5)];
+                throwbackText = entriesObj[throwbackDate];
+            } else {
+                throwbackDate = dates[0] || `${new Date().getFullYear()}-06-19`;
+                throwbackText = entriesObj[throwbackDate] || "A quiet moment of gratitude.";
+            }
+
+            // 9. THROWBACK #3: Three Forgotten Micro-Gems
+            let candidateDates = dates.filter(d => d !== spotlightDate && d !== firstDate && d !== throwbackDate);
+            let microGems = [];
+
+            if (candidateDates.length >= 3) {
+                const idx1 = Math.floor(candidateDates.length * 0.2);
+                const idx2 = Math.floor(candidateDates.length * 0.55);
+                const idx3 = Math.floor(candidateDates.length * 0.85);
+                [candidateDates[idx1], candidateDates[idx2], candidateDates[idx3]].forEach(d => {
+                    if (d && entriesObj[d]) {
+                        microGems.push({ date: d, text: entriesObj[d] });
+                    }
+                });
+            } else if (candidateDates.length > 0) {
+                candidateDates.forEach(d => microGems.push({ date: d, text: entriesObj[d] }));
+            } else {
+                microGems = [
+                    { date: "March 24", text: "First warm sunny afternoon reading in the park with iced matcha." },
+                    { date: "July 4", text: "Fireworks on the rooftop with everyone singing along to old songs." },
+                    { date: "October 31", text: "Spooky movie marathon with hot cider and all the snacks." }
+                ];
+            }
+
+            return {
+                total,
+                rate,
+                longestStreak: Math.max(1, longestStreak),
+                totalWords,
+                pagesCount,
+                avgWords,
+                archetype,
+                topMonthName,
+                topMonthCount: maxCount || Math.ceil(total / 4),
+                topMonthQuote: topMonthQuote || "A beautiful memory in your peak month.",
+                seasonHighlights,
+                spotlightDate,
+                spotlightText,
+                isUserStarred,
+                firstDate,
+                firstText,
+                throwbackDate,
+                throwbackText,
+                microGems,
+                isDemo
+            };
+        }
+
+        function playStoryChime() {
+            if (!wrappedSound) return;
+            try {
+                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const now = audioCtx.currentTime;
+                const notes = [523.25, 659.25, 783.99, 1046.50];
+                notes.forEach((freq, idx) => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.07);
+                    gain.gain.setValueAtTime(0.05, now + idx * 0.07);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.07 + 0.35);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now + idx * 0.07);
+                    osc.stop(now + idx * 0.07 + 0.4);
+                });
+            } catch (_) {}
+        }
+
+        
+        // =========================================
+        // TIME-TUNNEL HYPERSPACE INTRO (BEFORE WRAPPED)
+        // =========================================
+        function launchWrappedWithWarpIntro(forceDemo = false, customStats = null) {
+            let capsule = activeCapsule || memData;
+            let entriesObj = (capsule && capsule.entries) ? capsule.entries : {};
+            let dates = Object.keys(entriesObj).sort();
+            const isDemo = forceDemo || dates.length < 1;
+            if (isDemo) {
+                entriesObj = getDemoWrappedEntries();
+            }
+            const sampleTexts = Object.values(entriesObj).filter(Boolean);
+
+            const overlay = document.getElementById('warpOverlay');
+            const flash = document.getElementById('flashBang');
+            const msg = document.getElementById('warpMessage');
+            const core = document.getElementById('warpCore');
+
+            if (!overlay || sampleTexts.length === 0) {
+                openMemStoreWrapped(forceDemo, customStats);
+                return;
+            }
+
+            overlay.classList.add('active');
+            playWarpSound();
+            msg.innerText = "Reconstructing your year in memories...";
+            core.style.animation = 'warpCoreExpand 3.8s cubic-bezier(0.8, 0, 0.2, 1) forwards';
+
+            let spawnCount = 0;
+            const totalSpawns = 25;
+            const spawnInterval = setInterval(() => {
+                if (spawnCount > totalSpawns) {
+                    clearInterval(spawnInterval);
+                    return;
+                }
+
+                const el = document.createElement('div');
+                el.className = 'flying-entry';
+                let text = sampleTexts[Math.floor(Math.random() * sampleTexts.length)];
+                el.innerText = text.length > 45 ? text.substring(0, 45) + '...' : text;
+                const angle = Math.random() * Math.PI * 2;
+                const distance = 20 + Math.random() * 30;
+                el.style.left = `${50 + Math.cos(angle) * distance}%`;
+                el.style.top = `${50 + Math.sin(angle) * distance}%`;
+
+                const duration = 1.4 - (spawnCount * 0.02);
+                el.style.animationDuration = `${duration}s`;
+
+                overlay.appendChild(el);
+                setTimeout(() => el.remove(), duration * 1000);
+                spawnCount++;
+            }, 90);
+
+            // Tap anywhere during warp to skip straight into story
+            const skipWarp = () => {
+                clearInterval(spawnInterval);
+                overlay.onclick = null;
+                overlay.classList.remove('active');
+                openMemStoreWrapped(forceDemo, customStats);
+            };
+            overlay.onclick = skipWarp;
+
+            setTimeout(() => {
+                msg.innerText = "Traveling through the moments...";
+            }, 2200);
+
+            setTimeout(() => {
+                flash.classList.add('active');
+                setTimeout(() => {
+                    overlay.onclick = null;
+                    overlay.classList.remove('active');
+                    openMemStoreWrapped(forceDemo, customStats);
+                    msg.innerText = "Initializing...";
+                    setTimeout(() => flash.classList.remove('active'), 400);
+                }, 200);
+            }, 3800);
+        }
+
+        function openMemStoreWrapped(forceDemo = false, customStats = null) {
+            let capsule = activeCapsule || memData;
+            if (customStats) {
+                currentWrappedStats = customStats;
+            } else {
+                let entriesObj = (capsule && capsule.entries) ? capsule.entries : {};
+                let dates = Object.keys(entriesObj).sort();
+
+                const isDemo = forceDemo || dates.length < 1;
+                if (isDemo) {
+                    entriesObj = getDemoWrappedEntries();
+                    dates = Object.keys(entriesObj).sort();
+                }
+
+                const starredMap = (capsule && capsule.starred) || (memData && memData.starred) || {};
+                const timestampsMap = (capsule && capsule.timestamps) || (memData && memData.timestamps) || {};
+                currentWrappedStats = computeWrappedStats(entriesObj, dates, isDemo, starredMap, timestampsMap);
+                currentWrappedStats.year = (capsule && capsule.year) || new Date().getFullYear();
+            }
+
+            // Slide 0: Intro
+            const introPill = document.getElementById('wrappedSlide0Pill');
+            if (introPill) introPill.innerText = `✨ ${currentWrappedStats.year || 2026} Daily Journal Wrapped`;
+
+            // Slide 1: Throwback #1 - How It Began
+            const fDate = document.getElementById('wrappedFirstDate');
+            if (fDate) fDate.innerText = `📅 ${currentWrappedStats.firstDate || 'Day 1'}`;
+            const fText = document.getElementById('wrappedFirstText');
+            if (fText) fText.innerText = `"${currentWrappedStats.firstText || 'Started my journal.'}"`;
+
+            // Slide 2: Consistency
+            const s2Total = document.getElementById('wrappedSlide2TotalText');
+            if (s2Total) s2Total.innerText = `${currentWrappedStats.total} good memories`;
+            const s2Days = document.getElementById('wrappedSlide2DaysVal');
+            if (s2Days) s2Days.innerText = currentWrappedStats.total;
+            const s2Rate = document.getElementById('wrappedSlide2RateVal');
+            if (s2Rate) s2Rate.innerText = `${currentWrappedStats.rate}%`;
+
+            // Slide 3: Streak
+            const s3Streak = document.getElementById('wrappedSlide3StreakText');
+            if (s3Streak) s3Streak.innerText = `${currentWrappedStats.longestStreak} days in a row`;
+
+            // Slide 4: Words Written
+            const s4Words = document.getElementById('wrappedSlide4WordsText');
+            if (s4Words) s4Words.innerText = `${(currentWrappedStats.totalWords || 0).toLocaleString()} words`;
+            const s4Pages = document.getElementById('wrappedSlide4PagesVal');
+            if (s4Pages) s4Pages.innerText = `~${currentWrappedStats.pagesCount || '1.0'}`;
+            const s4Avg = document.getElementById('wrappedSlide4AvgVal');
+            if (s4Avg) s4Avg.innerText = currentWrappedStats.avgWords || 22;
+
+            // Slide 5: Archetype
+            const arch = currentWrappedStats.archetype || { title: "The Mindful Chronicler", icon: "☕", desc: "You notice the good in everyday moments." };
+            const archTitle = document.getElementById('wrappedArchetypeTitle');
+            if (archTitle) archTitle.innerText = arch.title;
+            const archIcon = document.getElementById('wrappedArchetypeIcon');
+            if (archIcon) archIcon.innerText = arch.icon;
+            const archDesc = document.getElementById('wrappedArchetypeDesc');
+            if (archDesc) archDesc.innerText = arch.desc;
+
+            // Slide 6: Peak Month
+            const topMTitle = document.getElementById('wrappedTopMonthTitle');
+            if (topMTitle) topMTitle.innerText = currentWrappedStats.topMonthName;
+            const topMCount = document.getElementById('wrappedTopMonthCount');
+            if (topMCount) topMCount.innerText = `Peak Month ${currentWrappedStats.topMonthName} &bull; ${currentWrappedStats.topMonthCount || 12} memories`;
+            const topMQuote = document.getElementById('wrappedTopMonthQuote');
+            if (topMQuote) topMQuote.innerText = currentWrappedStats.topMonthQuote ? `"${currentWrappedStats.topMonthQuote}"` : "A month filled with quiet gratitude.";
+
+            // Slide 7: Four Seasons Highlights
+            const seasonsBox = document.getElementById('wrappedSeasonCards');
+            if (seasonsBox) {
+                seasonsBox.innerHTML = '';
+                (currentWrappedStats.seasonHighlights || []).slice(0, 4).forEach(item => {
+                    const card = document.createElement('div');
+                    card.style.background = 'rgba(30, 41, 59, 0.55)';
+                    card.style.border = '1px solid rgba(255, 255, 255, 0.12)';
+                    card.style.borderRadius = '12px';
+                    card.style.padding = '8px 12px';
+                    card.style.textAlign = 'left';
+                    card.innerHTML = `
+                        <div style="font-size: 0.72rem; font-weight: 700; color: #818cf8; margin-bottom: 2px;">${item.season} &bull; ${item.date}</div>
+                        <div style="font-size: 0.85rem; color: #f1f5f9; font-weight: 500; line-height: 1.3;">"${item.text}"</div>
+                    `;
+                    seasonsBox.appendChild(card);
+                });
+            }
+
+            // Slide 8: Spotlight (Golden Moment)
+            const spotDate = document.getElementById('wrappedSpotlightDate');
+            if (spotDate) spotDate.innerText = `📅 ${currentWrappedStats.spotlightDate}`;
+            const spotText = document.getElementById('wrappedSpotlightText');
+            if (spotText) spotText.innerText = `"${currentWrappedStats.spotlightText}"`;
+            const starPill = document.getElementById('wrappedSpotlightPill');
+            const starTag = document.getElementById('wrappedSpotlightStarredTag');
+            if (starPill) starPill.innerText = currentWrappedStats.isUserStarred ? '⭐ Your Golden Moment' : '⭐ Spotlight Memory';
+            if (starTag) starTag.style.display = currentWrappedStats.isUserStarred ? 'flex' : 'none';
+
+            // Slide 9: Throwback #2 - Mid-Year Flashback
+            const tbDate = document.getElementById('wrappedThrowbackDate');
+            if (tbDate) tbDate.innerText = `📅 ${currentWrappedStats.throwbackDate}`;
+            const tbText = document.getElementById('wrappedThrowbackText');
+            if (tbText) tbText.innerText = `"${currentWrappedStats.throwbackText}"`;
+
+            // Slide 10: Throwback #3 - Three Forgotten Micro-Gems
+            const gemsBox = document.getElementById('wrappedMicroGemsBox');
+            if (gemsBox) {
+                gemsBox.innerHTML = '';
+                const colors = ['#38bdf8', '#f59e0b', '#ec4899'];
+                (currentWrappedStats.microGems || []).slice(0, 3).forEach((gem, idx) => {
+                    const card = document.createElement('div');
+                    card.style.background = 'rgba(30, 41, 59, 0.55)';
+                    card.style.border = '1px solid rgba(255, 255, 255, 0.12)';
+                    card.style.borderRadius = '12px';
+                    card.style.padding = '8px 12px';
+                    card.style.textAlign = 'left';
+                    card.innerHTML = `
+                        <div style="font-size: 0.72rem; font-weight: 700; color: ${colors[idx % colors.length]}; margin-bottom: 2px;">📅 ${gem.date}</div>
+                        <div style="font-size: 0.84rem; color: #f1f5f9; font-weight: 500; line-height: 1.3;">"${gem.text}"</div>
+                    `;
+                    gemsBox.appendChild(card);
+                });
+            }
+
+            // Slide 11: Finale Share Card
+            const cardYearEl = document.getElementById('wrappedCardYear');
+            if (cardYearEl) cardYearEl.innerText = `${currentWrappedStats.year || 2026} Daily Journal Recap`;
+            const cardSummary = document.getElementById('wrappedCardSummary');
+            if (cardSummary) {
+                cardSummary.innerHTML = `
+                    <b>${currentWrappedStats.total} good memories</b> documented this year.<br>
+                    Longest streak: <b>${currentWrappedStats.longestStreak} days in a row</b>.<br>
+                    Total written: <b>${(currentWrappedStats.totalWords || 0).toLocaleString()} words</b> (~ ${currentWrappedStats.pagesCount || 1} book pages).<br>
+                    Archetype: <b>${(currentWrappedStats.archetype && currentWrappedStats.archetype.title) || 'The Mindful Chronicler'}</b>.
+                `;
+            }
+
+            // Reset pause state
+            wrappedPaused = false;
+            const pauseBtn = document.getElementById('wrappedPauseBtn');
+            if (pauseBtn) pauseBtn.innerText = '⏸';
+
+            // Log full algorithm breakdown to console for testing
+            console.group("✨ MemStore Wrapped Algorithm Analysis (" + (currentWrappedStats.isDemo ? "Sample Demo" : "Real Journal Data") + ")");
+            console.log("📅 Year:", currentWrappedStats.year);
+            console.log("🌱 First Entry (Day 1):", currentWrappedStats.firstDate, "-", currentWrappedStats.firstText);
+            console.log("📊 Days Sealed:", currentWrappedStats.total, "(" + currentWrappedStats.rate + "% of year)");
+            console.log("🔥 Longest Streak:", currentWrappedStats.longestStreak, "consecutive days");
+            console.log("✍️ Total Words Written:", currentWrappedStats.totalWords, "words (~" + currentWrappedStats.pagesCount + " book pages)");
+            console.log("💬 Average Words / Entry:", currentWrappedStats.avgWords, "words");
+            console.log("🎭 Journaling Archetype:", (currentWrappedStats.archetype && currentWrappedStats.archetype.title) + " " + (currentWrappedStats.archetype && currentWrappedStats.archetype.icon));
+            console.log("🏆 Peak Grateful Month:", currentWrappedStats.topMonthName, "(" + currentWrappedStats.topMonthCount + " entries)");
+            console.log("🍃 Four Seasons:", currentWrappedStats.seasonHighlights);
+            console.log("⭐ Spotlight Memory:", currentWrappedStats.spotlightDate, "-", currentWrappedStats.spotlightText, currentWrappedStats.isUserStarred ? "[Starred by User]" : "[Auto-Ranked by Emotion/Effort]");
+            console.log("⏳ Mid-Year Flashback (~6mo ago):", currentWrappedStats.throwbackDate, "-", currentWrappedStats.throwbackText);
+            console.log("✨ 3 Forgotten Micro-Gems:", currentWrappedStats.microGems);
+            console.groupEnd();
+
+            // Render Segmented Progress Bars (12 Bars)
+            const barsContainer = document.getElementById('wrappedBars');
+            barsContainer.innerHTML = '';
+            for (let i = 0; i < WRAPPED_TOTAL_SLIDES; i++) {
+                const b = document.createElement('div');
+                b.className = 'wrapped-bar';
+                b.innerHTML = '<div class="wrapped-bar-fill"></div>';
+                barsContainer.appendChild(b);
+            }
+
+            document.getElementById('wrappedOverlay').classList.add('active');
+            showWrappedSlide(0);
+        }
+
+        function closeMemStoreWrapped() {
+            clearTimeout(wrappedTimer);
+            document.getElementById('wrappedOverlay').classList.remove('active');
+        }
+
+        function showWrappedSlide(index) {
+            clearTimeout(wrappedTimer);
+            wrappedSlideIdx = index;
+
+            // Update Progress bars
+            const bars = document.querySelectorAll('.wrapped-bar-fill');
+            bars.forEach((b, i) => {
+                b.style.transition = 'none';
+                if (i < index) {
+                    b.classList.add('done');
+                    b.style.width = '100%';
+                } else {
+                    b.classList.remove('done');
+                    b.style.width = '0%';
+                }
+            });
+
+            // Update Slides Visibility
+            for (let i = 0; i < WRAPPED_TOTAL_SLIDES; i++) {
+                const slide = document.getElementById(`wrappedSlide${i}`);
+                if (slide) slide.classList.toggle('active', i === index);
+            }
+
+            playStoryChime();
+
+            // Start timer for current slide
+            const curBar = bars[index];
+            if (curBar && !wrappedPaused) {
+                setTimeout(() => {
+                    curBar.style.transition = `width ${WRAPPED_DURATION}ms linear`;
+                    curBar.style.width = '100%';
+                }, 40);
+
+                wrappedStartTime = Date.now();
+                wrappedRemaining = WRAPPED_DURATION;
+                wrappedTimer = setTimeout(() => {
+                    nextWrappedSlide();
+                }, WRAPPED_DURATION);
+            }
+        }
+
+        function nextWrappedSlide() {
+            if (wrappedSlideIdx < WRAPPED_TOTAL_SLIDES - 1) {
+                showWrappedSlide(wrappedSlideIdx + 1);
+            } else {
+                clearTimeout(wrappedTimer);
+            }
+        }
+
+        function prevWrappedSlide() {
+            if (wrappedSlideIdx > 0) {
+                showWrappedSlide(wrappedSlideIdx - 1);
+            }
+        }
+
+        function toggleWrappedPause() {
+            wrappedPaused = !wrappedPaused;
+            const btn = document.getElementById('wrappedPauseBtn');
+            btn.innerText = wrappedPaused ? '▶' : '⏸';
+
+            const bars = document.querySelectorAll('.wrapped-bar-fill');
+            const curBar = bars[wrappedSlideIdx];
+
+            if (wrappedPaused) {
+                clearTimeout(wrappedTimer);
+                if (curBar) {
+                    const computedWidth = window.getComputedStyle(curBar).width;
+                    curBar.style.transition = 'none';
+                    curBar.style.width = computedWidth;
+                }
+            } else {
+                showWrappedSlide(wrappedSlideIdx);
+            }
+        }
+
+        function toggleWrappedSound() {
+            wrappedSound = !wrappedSound;
+            const btn = document.getElementById('wrappedSoundBtn');
+            btn.innerText = wrappedSound ? '🔊' : '🔇';
+        }
+
+        async function shareWrappedSummary() {
+            if (!currentWrappedStats) return;
+            const text = `✨ My MemStore Wrapped ✨\n🌟 ${currentWrappedStats.total} good memories recorded\n🔥 ${currentWrappedStats.longestStreak}-day gratitude streak\n📚 ${(currentWrappedStats.totalWords || 0).toLocaleString()} words written\n🎭 Persona: ${(currentWrappedStats.archetype && currentWrappedStats.archetype.title) || 'The Mindful Chronicler'}\n\nOne good thing a day. Relived all at once. #MemStore`;
+
+            if (navigator.share) {
+                try {
+                    await navigator.share({
+                        title: 'My MemStore Wrapped',
+                        text: text,
+                        url: 'https://jenishestmoizavut.github.io/MemStore/'
+                    });
+                    return;
+                } catch (_) {}
+            }
+
+            try {
+                await navigator.clipboard.writeText(text);
+                alert("Copied your Wrapped summary to clipboard! Paste it anywhere to share. 🌟");
+            } catch (_) {
+                alert(text);
+            }
+        }
+
+        // Keyboard navigation for Wrapped & Day-by-Day Reader
+        document.addEventListener('keydown', (e) => {
+            const wrappedOverlay = document.getElementById('wrappedOverlay');
+            if (wrappedOverlay && wrappedOverlay.classList.contains('active')) {
+                if (e.key === 'Escape') closeMemStoreWrapped();
+                else if (e.key === 'ArrowRight') nextWrappedSlide();
+                else if (e.key === 'ArrowLeft') prevWrappedSlide();
+                else if (e.key === ' ') { e.preventDefault(); toggleWrappedPause(); }
+                return;
+            }
+
+            // Reader navigation when reviewing memories
+            const reader = document.getElementById('reader');
+            if (reader && reader.style.display !== 'none' && document.getElementById('screen-unlocked').classList.contains('active')) {
+                if (e.key === 'ArrowRight') moveReader(1);
+                else if (e.key === 'ArrowLeft') moveReader(-1);
+            }
+        });
+
+        // =========================================
+        // WRAPPED DEV STUDIO CONTROLLER & PRESETS
+        // =========================================
+        const WRAPPED_PRESETS = {
+            legend: {
+                year: 2026,
+                total: 365,
+                streak: 89,
+                words: 7850,
+                archetypeTitle: "The Midnight Philosopher",
+                archetypeIcon: "🌙",
+                archetypeDesc: "You reflect on life in the stillness of the late hours, finding clarity after the world quiets down.",
+                topMonth: "December",
+                topMonthQuote: "Completed 365 full days of gratitude. A whole year of noticing the light.",
+                spring: "Cherry blossoms peaked. Sat by the lake for an hour just listening.",
+                summer: "Late night road trip to the coast, watched the sunrise over the ocean.",
+                autumn: "Rain tapping on the window with hot apple cider and old books.",
+                winter: "Snow falling quietly outside. Completed 365 full days of gratitude.",
+                spotlightDate: "October 14",
+                spotlightText: "Walked through golden fallen leaves holding hands in the quiet autumn breeze. Felt completely at peace.",
+                firstDate: "January 1, 2026",
+                firstText: "Started my 365-day journal with a warm cup of coffee and fresh hopes.",
+                throwbackDate: "June 19",
+                throwbackText: "Midnight road trip to the coast, watched the sunrise over the ocean."
+            },
+            casual: {
+                year: 2026,
+                total: 142,
+                streak: 21,
+                words: 3420,
+                archetypeTitle: "The Morning Light Seeker",
+                archetypeIcon: "☀️",
+                archetypeDesc: "You start your days with intention, greeting the world with an open heart and early gratitude.",
+                topMonth: "July",
+                topMonthQuote: "Rooftop barbecue with childhood friends singing 2000s classics under fairy lights.",
+                spring: "First warm sunny afternoon reading in the park with iced matcha.",
+                summer: "Rooftop barbecue with childhood friends singing 2000s classics under fairy lights.",
+                autumn: "Baked warm cinnamon rolls on a chilly Sunday morning.",
+                winter: "Cozy movie marathon wrapped in blankets while the storm passed.",
+                spotlightDate: "July 28",
+                spotlightText: "Shipped a side project I spent months building. It actually works and friends loved it!",
+                firstDate: "January 1, 2026",
+                firstText: "Decided to start journaling again. Hoping to capture at least 100 days.",
+                throwbackDate: "April 12",
+                throwbackText: "Adopted a stray kitten that decided our front porch was home."
+            },
+            summer: {
+                year: 2026,
+                total: 85,
+                streak: 27,
+                words: 1980,
+                archetypeTitle: "The Mindful Chronicler",
+                archetypeIcon: "☕",
+                archetypeDesc: "You pause in the middle of life's rush to savor the small victories and good people around you.",
+                topMonth: "August",
+                topMonthQuote: "Swimming in the lake under a golden pink sunset with friends.",
+                spring: "Morning jog when the flowers were just opening up.",
+                summer: "Swimming in the lake under a golden pink sunset with friends.",
+                autumn: "Long bike ride through the park under amber maple leaves.",
+                winter: "Warm cup of cocoa after walking through the holiday market lights.",
+                spotlightDate: "August 15",
+                spotlightText: "Stargazing on a clear warm summer night, spotted 3 shooting stars.",
+                firstDate: "March 1, 2026",
+                firstText: "First warm breeze of the year. Time to begin a fresh journal.",
+                throwbackDate: "May 8",
+                throwbackText: "Cherry blossoms in full bloom, everything felt peaceful today."
+            },
+            starter: {
+                year: 2026,
+                total: 21,
+                streak: 7,
+                words: 480,
+                archetypeTitle: "The Gentle Observer",
+                archetypeIcon: "🌱",
+                archetypeDesc: "Taking the first steps of a mindful journey. One good thing every day.",
+                topMonth: "January",
+                topMonthQuote: "Started my MemStore 365-day journal. One good thing every day.",
+                spring: "Noticed the first green buds on the trees outside my window.",
+                summer: "First cold iced coffee of the warm season.",
+                autumn: "Bought a cozy oversized knit sweater for the chilly days ahead.",
+                winter: "Started my MemStore 365-day journal. One good thing every day.",
+                spotlightDate: "January 1",
+                spotlightText: "Started the 365-day journal with a warm cup of coffee and high hopes.",
+                firstDate: "January 1, 2026",
+                firstText: "Started the 365-day journal with a warm cup of coffee and high hopes.",
+                throwbackDate: "January 18",
+                throwbackText: "Late night walk in the freezing cold talking about life and the future."
+            }
+        };
+
+        function openWrappedStudio() {
+            if (document.getElementById('wrappedOverlay').classList.contains('active')) {
+                toggleWrappedPause();
+            }
+            document.getElementById('wrappedStudioModal').classList.add('active');
+        }
+
+        function closeWrappedStudio() {
+            document.getElementById('wrappedStudioModal').classList.remove('active');
+        }
+
+        function applyWrappedPreset(key) {
+            const p = WRAPPED_PRESETS[key];
+            if (!p) return;
+            document.getElementById('studioYear').value = p.year;
+            document.getElementById('studioTotal').value = p.total;
+            document.getElementById('studioStreak').value = p.streak;
+            document.getElementById('studioTopMonth').value = p.topMonth;
+            document.getElementById('studioSpring').value = p.spring;
+            document.getElementById('studioSummer').value = p.summer;
+            document.getElementById('studioAutumn').value = p.autumn;
+            document.getElementById('studioWinter').value = p.winter;
+            document.getElementById('studioSpotlightDate').value = p.spotlightDate;
+            document.getElementById('studioSpotlightText').value = p.spotlightText;
+
+            document.querySelectorAll('.studio-chip').forEach(c => c.classList.remove('active'));
+            const chip = document.getElementById(`chip-${key}`);
+            if (chip) chip.classList.add('active');
+        }
+
+        function launchCustomWrappedFromStudio() {
+            const year = parseInt(document.getElementById('studioYear').value) || 2026;
+            const total = parseInt(document.getElementById('studioTotal').value) || 0;
+            const streak = parseInt(document.getElementById('studioStreak').value) || 0;
+            const topMonthName = document.getElementById('studioTopMonth').value || "October";
+            const rate = Math.min(100, Math.round((total / 365) * 100));
+
+            const totalWords = total * 22;
+            const pagesCount = (totalWords / 250).toFixed(1);
+            const avgWords = 22;
+
+            const archetype = {
+                title: streak > 40 ? "The Dedicated Chronicler" : (total > 100 ? "The Midnight Philosopher" : "The Mindful Chronicler"),
+                icon: streak > 40 ? "🛡️" : (total > 100 ? "🌙" : "☕"),
+                desc: "You pause in the middle of life's rush to savor the small victories and good people around you."
+            };
+
+            const seasonHighlights = [
+                { season: "Spring 🌸", date: `April ${year}`, text: document.getElementById('studioSpring').value || "Cherry blossoms in bloom." },
+                { season: "Summer ☀️", date: `July ${year}`, text: document.getElementById('studioSummer').value || "Warm ocean breeze at sunset." },
+                { season: "Autumn 🍂", date: `October ${year}`, text: document.getElementById('studioAutumn').value || "Golden leaves and hot cider." },
+                { season: "Winter ❄️", date: `December ${year}`, text: document.getElementById('studioWinter').value || "Snow falling gently outside." }
+            ];
+
+            const spotlightDate = document.getElementById('studioSpotlightDate').value || `October 14, ${year}`;
+            const spotlightText = document.getElementById('studioSpotlightText').value || "A moment that made you smile.";
+
+            const firstDate = `January 1, ${year}`;
+            const firstText = document.getElementById('studioSpring').value || "Started my journal with fresh intentions.";
+
+            const throwbackDate = `June 19, ${year}`;
+            const throwbackText = "Midnight road trip to the coast, watched the sunrise over the ocean.";
+
+            const microGems = [
+                { date: `March 24, ${year}`, text: "First warm sunny afternoon reading in the park with iced matcha." },
+                { date: `July 4, ${year}`, text: "Fireworks on the rooftop with everyone singing along to old songs." },
+                { date: `October 31, ${year}`, text: "Spooky movie marathon with hot cider and all the snacks." }
+            ];
+
+            const customStats = {
+                year,
+                total,
+                rate,
+                longestStreak: streak,
+                totalWords,
+                pagesCount,
+                avgWords,
+                archetype,
+                topMonthName,
+                topMonthCount: Math.ceil(total / 3.5),
+                topMonthQuote: document.getElementById('studioAutumn').value || "Golden leaves and hot cider.",
+                seasonHighlights,
+                spotlightDate,
+                spotlightText,
+                isUserStarred: true,
+                firstDate,
+                firstText,
+                throwbackDate,
+                throwbackText,
+                microGems,
+                isDemo: true
+            };
+
+            closeWrappedStudio();
+            openMemStoreWrapped(false, customStats);
+        }
+
+        async function seedSampleVaultFromStudio() {
+            const year = parseInt(document.getElementById('studioYear').value) || new Date().getFullYear();
+            const total = Math.min(365, parseInt(document.getElementById('studioTotal').value) || 50);
+
+            if (!memData) {
+                memData = { year: year, entries: {}, drafts: {} };
+            }
+            memData.year = year;
+            if (!memData.entries) memData.entries = {};
+            if (!memData.starred) memData.starred = {};
+
+            const sampleQuotes = [
+                document.getElementById('studioSpring').value || "Spring blossoms in bloom.",
+                document.getElementById('studioSummer').value || "Beach day with friends at sunset.",
+                document.getElementById('studioAutumn').value || "Crisp sweater weather and hot cider.",
+                document.getElementById('studioWinter').value || "Warm fireplace on a cold evening.",
+                "Morning coffee with quiet thoughts before the world woke up.",
+                "Shared a great laugh with good friends until our stomachs hurt.",
+                "Cooked a delicious homemade meal from scratch.",
+                "Walked through the park under golden sunny skies.",
+                "Finished reading an inspiring book that changed my outlook."
+            ];
+
+            const daysInYear = ((year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0)) ? 366 : 365;
+            const step = Math.max(1, Math.floor(daysInYear / total));
+
+            let count = 0;
+            for (let i = 0; i < daysInYear && count < total; i += step) {
+                const d = new Date(year, 0, 1 + i);
+                const yyyy = d.getFullYear();
+                const mm = String(d.getMonth() + 1).padStart(2, '0');
+                const dd = String(d.getDate()).padStart(2, '0');
+                const dStr = `${yyyy}-${mm}-${dd}`;
+                memData.entries[dStr] = sampleQuotes[count % sampleQuotes.length];
+                count++;
+            }
+
+            // Star the mid-year highlight
+            const sampleDates = Object.keys(memData.entries).sort();
+            if (sampleDates.length > 3) {
+                const midDate = sampleDates[Math.floor(sampleDates.length * 0.65)];
+                memData.starred[midDate] = true;
+            }
+
+            await saveToDB('activeVault', memData);
+            alert(`✨ Seeded ${count} memories into your ${year} journal! Your calendar grid is now populated.`);
+            checkAppState();
+        }
+
+        async function clearTestSeedFromStudio() {
+            if (confirm("Reset current active journal memories?")) {
+                if (memData) {
+                    memData.entries = {};
+                    memData.starred = {};
+                }
+                await saveToDB('activeVault', memData);
+                alert("Journal entries cleared.");
+                checkAppState();
+            }
+        }
+
+        
+        // =========================================
+        // YEAR-END ROLLOVER & NEW YEAR CONTROLLER
+        // =========================================
+        function showYearEndCelebrationModal() {
+            const yr = (memData && memData.startDate) ? new Date(memData.startDate).getFullYear() : (new Date().getFullYear());
+            const yrLabel = document.getElementById('yearEndCelebrationYear');
+            if (yrLabel) yrLabel.innerText = yr;
+            const modal = document.getElementById('yearEndModal');
+            if (modal) modal.classList.add('active');
+        }
+
+        function closeYearEndModal() {
+            const modal = document.getElementById('yearEndModal');
+            if (modal) modal.classList.remove('active');
+        }
+
+        function promptStartNextYear() {
+            const curYear = (memData && memData.startDate) ? new Date(memData.startDate).getFullYear() : (new Date().getFullYear());
+            const nextYear = curYear + 1;
+            if (confirm(`Preserve ${curYear} in Previous Years and start your clean ${nextYear} Journal (Jan 1, ${nextYear})?`)) {
+                startNewYearJournal(nextYear);
+            }
+        }
+
+        async function startNewYearJournal(targetYear) {
+            const nextYear = targetYear || (new Date().getFullYear());
+            
+            // 1. Archive current year if it has memories
+            if (memData && Object.keys(memData.entries || {}).length > 0) {
+                archiveCurrentVault();
+            }
+
+            // 2. Setup fresh journal for the new year starting on Jan 1st
+            const startDateStr = `${nextYear}-01-01`;
+            memData = {
+                id: Date.now().toString(),
+                startDate: startDateStr,
+                year: nextYear,
+                entries: {},
+                drafts: {},
+                timestamps: {},
+                starred: {}
+            };
+
+            await saveToDB('activeVault', memData);
+            saveMemoriesToCloud();
+            refreshPreviousYearsButton();
+
+            alert(`🎉 Welcome to your ${nextYear} Journal! Day 1 is ready for your first good memory.`);
+            nav('screen-main');
+            renderApp();
+        }
+
+        // --- DEV SIMULATORS FOR TESTING ROLLOVER UX ---
+        async function simulateDec31Seal() {
+            closeWrappedStudio();
+            const year = new Date().getFullYear();
+            
+            // Setup active journal for this year with entries through Dec 30
+            if (!memData) memData = { year, startDate: `${year}-01-01`, entries: {}, drafts: {}, timestamps: {}, starred: {} };
+            memData.startDate = `${year}-01-01`;
+            
+            // Seed sample memories if empty
+            if (Object.keys(memData.entries).length < 10) {
+                for (let m = 1; m <= 12; m++) {
+                    const mm = String(m).padStart(2, '0');
+                    memData.entries[`${year}-${mm}-15`] = `Good day in month ${m}`;
+                }
+            }
+            
+            // Dec 31 final date
+            const dec31 = `${year}-12-31`;
+            delete memData.entries[dec31];
+            memData.drafts[dec31] = "New Year's Eve: Standing at the edge of the year, feeling deeply grateful for every lesson and every smile.";
+            
+            await saveToDB('activeVault', memData);
+            nav('screen-main');
+            renderApp();
+            openEditor(dec31);
+            alert(`✨ Simulated Dec 31: Your final draft is ready in the editor. Click 'Seal' to experience the midnight rollover celebration!`);
+        }
+
+        async function simulateJan1Unlock() {
+            closeWrappedStudio();
+            window._simulatedRollover = true;
+            const year = new Date().getFullYear();
+            if (!memData) memData = { year, startDate: `${year}-01-01`, entries: {}, drafts: {}, timestamps: {}, starred: {} };
+            memData.entries[`${year}-12-31`] = "Looking back on 365 days of growth. We made it.";
+            await saveToDB('activeVault', memData);
+            showYearEndCelebrationModal();
+        }
+
+        window.onload = () => { bootApp(); initConnectivityWatcher(); setTimeout(openWrappedStudio, 350); };
     </script>
 <footer style="margin-top: auto; padding: 40px 0 20px 0; text-align: center; opacity: 0.4; font-size: 0.8rem; letter-spacing: 0.5px;">
     <p style="margin: 0;">© 2026 Jenish</p>
@@ -2037,5 +3593,334 @@ display: none;
      alt="hidden-counter">
 </footer>	
     
+
+    <!-- MEMSTORE WRAPPED DEV STUDIO MODAL -->
+    
+    <!-- YEAR-END CELEBRATION MODAL -->
+    <div id="yearEndModal" class="studio-modal-overlay" role="dialog" aria-modal="true">
+        <div class="studio-modal-card" style="text-align: center; max-width: 460px; padding: 28px 22px;">
+            <div style="font-size: 3.5rem; margin-bottom: 10px; animation: floatAnim 2.5s ease-in-out infinite;">🎉</div>
+            <h2 style="font-size: 1.8rem; font-weight: 800; margin: 0 0 8px 0; color: #fff;">
+                <span class="wrapped-gradient-text" id="yearEndCelebrationYear">Year</span> Complete!
+            </h2>
+            <p style="font-size: 0.92rem; color: #cbd5e1; line-height: 1.5; margin: 0 0 20px 0;">
+                You showed up, held onto the good things, and reached the finish line. Your 365 days of light are now fully unlocked.
+            </p>
+
+            <div style="display: flex; flex-direction: column; gap: 10px; width: 100%;">
+                <button class="primary-btn" onclick="closeYearEndModal(); launchWrappedWithWarpIntro(false);" style="background: linear-gradient(135deg, #6366f1, #ec4899); border: none; font-weight: 800; font-size: 1rem; padding: 15px; box-shadow: 0 8px 25px -4px rgba(236,72,153,0.5);">
+                    ✨ Watch Your Annual Wrapped (12 Slides)
+                </button>
+                <button class="secondary-btn" onclick="closeYearEndModal(); enterTimeCapsule();" style="padding: 12px; font-weight: 700;">
+                    📖 Browse All 365 Days
+                </button>
+                <button class="secondary-btn" onclick="closeYearEndModal(); promptStartNextYear();" style="padding: 12px; color: #818cf8; border-color: rgba(99,102,241,0.4);">
+                    🌱 Start Next Year's Journal
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="wrappedStudioModal" class="studio-modal-overlay" role="dialog" aria-modal="true">
+        <div class="studio-modal-card">
+            <div class="studio-header">
+                <div class="studio-title-wrap">
+                    <h2 class="studio-title">🛠️ Wrapped Dev Studio</h2>
+                    <span class="studio-badge">12 Slides</span>
+                </div>
+                <button class="wrapped-ctrl-btn" onclick="closeWrappedStudio()" title="Close Studio" style="font-size: 1.1rem; width: 32px; height: 32px;">✕</button>
+            </div>
+            <p class="studio-sub">Test your 12-slide annual recap with customizable stats, quotes, archetypes, and multi-chapter throwbacks!</p>
+
+            <!-- Presets -->
+            <div class="studio-section-label">⚡ Quick Presets</div>
+            <div class="studio-preset-chips">
+                <button class="studio-chip" id="chip-legend" onclick="applyWrappedPreset('legend')">🏆 365 Legend</button>
+                <button class="studio-chip" id="chip-casual" onclick="applyWrappedPreset('casual')">🌿 Casual Vibe</button>
+                <button class="studio-chip" id="chip-summer" onclick="applyWrappedPreset('summer')">☀️ Summer Glow</button>
+                <button class="studio-chip" id="chip-starter" onclick="applyWrappedPreset('starter')">🐣 Starter</button>
+            </div>
+
+            <!-- Numbers Grid -->
+            <div class="studio-section-label">📊 Core Journal Stats</div>
+            <div class="studio-form-grid">
+                <div class="studio-field">
+                    <label for="studioYear">Journal Year</label>
+                    <input type="number" id="studioYear" class="studio-input" value="2026">
+                </div>
+                <div class="studio-field">
+                    <label for="studioTotal">Total Sealed Days</label>
+                    <input type="number" id="studioTotal" class="studio-input" value="365" min="1" max="366">
+                </div>
+                <div class="studio-field">
+                    <label for="studioStreak">Longest Day Streak</label>
+                    <input type="number" id="studioStreak" class="studio-input" value="89" min="1" max="366">
+                </div>
+                <div class="studio-field">
+                    <label for="studioTopMonth">Peak Grateful Month</label>
+                    <select id="studioTopMonth" class="studio-select">
+                        <option value="January">January</option>
+                        <option value="February">February</option>
+                        <option value="March">March</option>
+                        <option value="April">April</option>
+                        <option value="May">May</option>
+                        <option value="June">June</option>
+                        <option value="July">July</option>
+                        <option value="August">August</option>
+                        <option value="September">September</option>
+                        <option value="October" selected>October</option>
+                        <option value="November">November</option>
+                        <option value="December">December</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Seasonal Highlights -->
+            <div class="studio-section-label">🌸 Four Seasons Highlights</div>
+            <div class="studio-form-grid">
+                <div class="studio-field studio-col-full">
+                    <label for="studioSpring">🌸 Spring Memory</label>
+                    <input type="text" id="studioSpring" class="studio-input" value="Cherry blossoms peaked. Sat by the lake for an hour just listening.">
+                </div>
+                <div class="studio-field studio-col-full">
+                    <label for="studioSummer">☀️ Summer Memory</label>
+                    <input type="text" id="studioSummer" class="studio-input" value="Late night road trip to the coast, watched the sunrise over the ocean.">
+                </div>
+                <div class="studio-field studio-col-full">
+                    <label for="studioAutumn">🍂 Autumn Memory</label>
+                    <input type="text" id="studioAutumn" class="studio-input" value="Rain tapping on the window with hot apple cider and old books.">
+                </div>
+                <div class="studio-field studio-col-full">
+                    <label for="studioWinter">❄️ Winter Memory</label>
+                    <input type="text" id="studioWinter" class="studio-input" value="Snow falling quietly outside. Completed 365 full days of gratitude.">
+                </div>
+            </div>
+
+            <!-- Spotlight Memory -->
+            <div class="studio-section-label">⭐ Spotlight Golden Memory (Slide 8)</div>
+            <div class="studio-form-grid">
+                <div class="studio-field">
+                    <label for="studioSpotlightDate">Date</label>
+                    <input type="text" id="studioSpotlightDate" class="studio-input" value="October 14">
+                </div>
+                <div class="studio-field studio-col-full">
+                    <label for="studioSpotlightText">Spotlight Quote</label>
+                    <textarea id="studioSpotlightText" class="studio-textarea">Walked through golden fallen leaves holding hands in the quiet autumn breeze. Felt completely at peace.</textarea>
+                </div>
+            </div>
+
+            
+            <!-- Year Rollover Simulator -->
+            <div class="studio-section-label">🎆 Test Year Rollover UX (Dec 31 &rarr; Jan 1)</div>
+            <div class="studio-row-btns" style="margin-bottom: 10px;">
+                <button class="studio-btn-sub" onclick="simulateDec31Seal()" style="color: #fde047; border-color: rgba(250,204,21,0.4);" title="Test writing the final Dec 31 entry and sealing at midnight">
+                    ✍️ Test Final Seal (Dec 31)
+                </button>
+                <button class="studio-btn-sub" onclick="simulateJan1Unlock()" style="color: #a7f3d0; border-color: rgba(52,211,153,0.4);" title="Test waking up on Jan 1 00:00 with year unlocked">
+                    🕛 Test Jan 1 Rollover
+                </button>
+            </div>
+
+            <!-- Actions -->
+            <div class="studio-actions-group">
+                <button class="studio-btn-launch" onclick="launchCustomWrappedFromStudio()">
+                    <span>✨ Launch 12-Slide Wrapped Story</span>
+                    <span>▶</span>
+                </button>
+                <div class="studio-row-btns">
+                    <button class="studio-btn-sub" onclick="seedSampleVaultFromStudio()" title="Inject these memories into the actual calendar database">
+                        📥 Seed Calendar (DB)
+                    </button>
+                    <button class="studio-btn-sub studio-btn-danger-sub" onclick="clearTestSeedFromStudio()" title="Clear entries from active vault">
+                        🧹 Clear Seed
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MEMSTORE 12-SLIDE WRAPPED STORY MODAL -->
+    <div id="wrappedOverlay" class="wrapped-overlay" role="dialog" aria-modal="true">
+        <div class="wrapped-header">
+            <div class="wrapped-bars" id="wrappedBars"></div>
+            <button class="wrapped-ctrl-btn" onclick="openWrappedStudio()" title="Edit in Dev Studio" style="font-size: 0.72rem; width: auto; padding: 0 10px; border-radius: 999px; font-weight: 700; background: rgba(255,255,255,0.15);">🛠️ Studio</button>
+            <button class="wrapped-ctrl-btn" id="wrappedSoundBtn" onclick="toggleWrappedSound()" title="Toggle Sound">🔊</button>
+            <button class="wrapped-ctrl-btn" id="wrappedPauseBtn" onclick="toggleWrappedPause()" title="Pause/Play">⏸</button>
+            <button class="wrapped-ctrl-btn" onclick="closeMemStoreWrapped()" title="Close Wrapped">✕</button>
+        </div>
+
+        <div class="wrapped-tap-left" id="wrappedTapLeft" onclick="prevWrappedSlide()"></div>
+        <div class="wrapped-tap-right" id="wrappedTapRight" onclick="nextWrappedSlide()"></div>
+
+        <div class="wrapped-content" id="wrappedContent">
+            <!-- Slide 0: Intro -->
+            <div class="wrapped-slide" id="wrappedSlide0">
+                <div class="wrapped-pill" id="wrappedSlide0Pill">✨ 2026 Daily Journal Wrapped</div>
+                <h1 class="wrapped-hero-title">Your Year in<br><span class="wrapped-gradient-text">Good Things</span></h1>
+                <p class="subtitle" style="margin-bottom: 24px; color: #cbd5e1; max-width: 380px; margin-left: auto; margin-right: auto;">In a fast-moving world, you stopped every day to write down what truly mattered.</p>
+                <div style="font-size: 3.6rem; margin: 15px 0; animation: floatAnim 3s ease-in-out infinite;">📖</div>
+                <p style="font-size: 0.85rem; color: var(--muted); margin-top: 15px;">Tap anywhere to begin your story &rarr;</p>
+            </div>
+
+            <!-- Slide 1: Throwback #1 - How It Began (Day 1) -->
+            <div class="wrapped-slide" id="wrappedSlide1">
+                <div class="wrapped-pill">🌱 Chapter 1: The Beginning</div>
+                <h2 class="wrapped-hero-title" style="font-size: 1.85rem;">Where your journey<br><span class="wrapped-gradient-text">started this year.</span></h2>
+                <div class="wrapped-memory-box" style="margin-top: 16px;">
+                    <div class="wrapped-memory-date" id="wrappedFirstDate">📅 January 1, 2026</div>
+                    <div class="wrapped-memory-text" id="wrappedFirstText">"Started my 365-day journal with a warm cup of coffee and fresh hopes."</div>
+                </div>
+                <p style="font-size: 0.88rem; color: #94a3b8; margin-top: 18px; line-height: 1.45;">Before the streaks and book pages, you sat down and wrote this very first good thing.</p>
+            </div>
+
+            <!-- Slide 2: Days Sealed / Consistency -->
+            <div class="wrapped-slide" id="wrappedSlide2">
+                <div class="wrapped-pill">📅 Showing Up</div>
+                <h2 class="wrapped-hero-title" style="font-size: 1.85rem;">You recorded<br><span class="wrapped-gradient-text" id="wrappedSlide2TotalText">0 good memories</span></h2>
+                <div class="wrapped-stats-grid" style="margin-top: 20px;">
+                    <div class="wrapped-stat-card">
+                        <div class="wrapped-stat-val" id="wrappedSlide2DaysVal">0</div>
+                        <div class="wrapped-stat-lbl">Days Documented</div>
+                    </div>
+                    <div class="wrapped-stat-card">
+                        <div class="wrapped-stat-val" id="wrappedSlide2RateVal">0%</div>
+                        <div class="wrapped-stat-lbl">Year Captured</div>
+                    </div>
+                </div>
+                <p style="font-size: 0.9rem; color: #94a3b8; margin-top: 20px; line-height: 1.5;">Every single entry was a deliberate choice to look for the light.</p>
+            </div>
+
+            <!-- Slide 3: Unstoppable Streak -->
+            <div class="wrapped-slide" id="wrappedSlide3">
+                <div class="wrapped-pill">🔥 The Streak</div>
+                <h2 class="wrapped-hero-title" style="font-size: 1.85rem;">You kept the flame alive for<br><span class="wrapped-gradient-text" id="wrappedSlide3StreakText">0 consecutive days</span></h2>
+                <div style="font-size: 3.8rem; margin: 15px 0; animation: floatAnim 2.5s ease-in-out infinite;">🔥</div>
+                <div class="wrapped-memory-box" style="margin-top: 10px;">
+                    <div style="font-size: 0.82rem; font-weight: 700; color: #f59e0b; margin-bottom: 4px;">UNBROKEN CONSISTENCY</div>
+                    <div style="font-size: 0.92rem; color: #cbd5e1; line-height: 1.4;">Showing up day after day is where gratitude stops being an effort and becomes second nature.</div>
+                </div>
+            </div>
+
+            <!-- Slide 4: Total Words Written -->
+            <div class="wrapped-slide" id="wrappedSlide4">
+                <div class="wrapped-pill">✍️ Volume of Thoughts</div>
+                <h2 class="wrapped-hero-title" style="font-size: 1.85rem;">You wrote over<br><span class="wrapped-gradient-text" id="wrappedSlide4WordsText">0 words</span></h2>
+                <div class="wrapped-stats-grid" style="margin-top: 20px;">
+                    <div class="wrapped-stat-card">
+                        <div class="wrapped-stat-val" id="wrappedSlide4PagesVal">~0</div>
+                        <div class="wrapped-stat-lbl">Book Pages Written 📚</div>
+                    </div>
+                    <div class="wrapped-stat-card">
+                        <div class="wrapped-stat-val" id="wrappedSlide4AvgVal">0</div>
+                        <div class="wrapped-stat-lbl">Avg Words Per Entry 💬</div>
+                    </div>
+                </div>
+                <p style="font-size: 0.9rem; color: #94a3b8; margin-top: 20px;">You didn't just live this year. You authored it.</p>
+            </div>
+
+            <!-- Slide 5: Journaling Archetype -->
+            <div class="wrapped-slide" id="wrappedSlide5">
+                <div class="wrapped-pill">🎭 Your Journaling Vibe</div>
+                <h2 class="wrapped-hero-title" style="font-size: 1.8rem;">Your Persona:<br><span class="wrapped-gradient-text" id="wrappedArchetypeTitle">The Mindful Chronicler</span></h2>
+                <div id="wrappedArchetypeIcon" style="font-size: 3.6rem; margin: 12px 0; animation: floatAnim 3s ease-in-out infinite;">🌙</div>
+                <div style="background: rgba(30, 41, 59, 0.55); border: 1px solid rgba(255,255,255,0.12); border-radius: 18px; padding: 16px 20px; margin-top: 8px;">
+                    <p id="wrappedArchetypeDesc" style="font-size: 0.92rem; color: #cbd5e1; line-height: 1.5; margin: 0;"></p>
+                </div>
+            </div>
+
+            <!-- Slide 6: Peak Grateful Month -->
+            <div class="wrapped-slide" id="wrappedSlide6">
+                <div class="wrapped-pill">🏆 Peak Chapter</div>
+                <h2 class="wrapped-hero-title" style="font-size: 1.85rem;"><span class="wrapped-gradient-text" id="wrappedTopMonthTitle">October</span> was your<br>brightest month.</h2>
+                <div style="background: rgba(30, 41, 59, 0.55); border: 1px solid rgba(255,255,255,0.12); border-radius: 18px; padding: 18px; margin: 16px 0; text-align: left;">
+                    <div style="font-size: 0.8rem; font-weight: 700; color: #818cf8; margin-bottom: 6px;" id="wrappedTopMonthCount">Peak Month &bull; 0 memories</div>
+                    <div id="wrappedTopMonthQuote" style="font-size: 0.98rem; color: #f8fafc; font-style: italic; line-height: 1.45;">"A highlight from your favorite month."</div>
+                </div>
+                <p style="font-size: 0.88rem; color: #94a3b8; margin: 0;">Whatever was happening that month, you were truly in your element.</p>
+            </div>
+
+            <!-- Slide 7: Four Seasons Highlights -->
+            <div class="wrapped-slide" id="wrappedSlide7">
+                <div class="wrapped-pill">🍃 Seasonal Evolution</div>
+                <h2 class="wrapped-hero-title" style="font-size: 1.75rem;">Four Seasons of<br><span class="wrapped-gradient-text">Little Victories</span></h2>
+                <div id="wrappedSeasonCards" style="display: flex; flex-direction: column; gap: 8px; width: 100%; margin-top: 10px;"></div>
+            </div>
+
+            <!-- Slide 8: Golden Moment (Spotlight) -->
+            <div class="wrapped-slide" id="wrappedSlide8">
+                <div class="wrapped-pill" id="wrappedSpotlightPill">⭐ Your Golden Moment</div>
+                <h2 class="wrapped-hero-title" style="font-size: 1.85rem;">The moment that<br><span class="wrapped-gradient-text">stands above all.</span></h2>
+                <div class="wrapped-memory-box" id="wrappedSpotlightBox" style="margin-top: 15px;">
+                    <div class="wrapped-memory-date" id="wrappedSpotlightDate">📅 October 14</div>
+                    <div class="wrapped-memory-text" id="wrappedSpotlightText">"Watching the rain from the coffee shop window."</div>
+                    <div id="wrappedSpotlightStarredTag" style="margin-top: 12px; font-size: 0.8rem; font-weight: 700; color: #fde047; display: none; align-items: center; justify-content: center; gap: 5px;">
+                        <span>⭐</span> Marked by you as a Golden Memory
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 9: Throwback #2 - The Mid-Year Time-Machine -->
+            <div class="wrapped-slide" id="wrappedSlide9">
+                <div class="wrapped-pill">⏳ Halfway Through</div>
+                <h2 class="wrapped-hero-title" style="font-size: 1.85rem;">A forgotten afternoon<br><span class="wrapped-gradient-text">from 6 months ago.</span></h2>
+                <div class="wrapped-memory-box" style="margin-top: 16px;">
+                    <div class="wrapped-memory-date" id="wrappedThrowbackDate">📅 June 19</div>
+                    <div class="wrapped-memory-text" id="wrappedThrowbackText">"Midnight road trip to the coast, watched the sunrise over the ocean."</div>
+                </div>
+                <p style="font-size: 0.88rem; color: #94a3b8; margin-top: 16px; line-height: 1.45;">You probably haven't thought about this afternoon in months. Now you get to smile at it all over again.</p>
+            </div>
+
+            <!-- Slide 10: Throwback #3 - Three Forgotten Micro-Gems -->
+            <div class="wrapped-slide" id="wrappedSlide10">
+                <div class="wrapped-pill">✨ Little Victories</div>
+                <h2 class="wrapped-hero-title" style="font-size: 1.75rem;">Three quiet memories<br><span class="wrapped-gradient-text">saved from being lost.</span></h2>
+                <div id="wrappedMicroGemsBox" style="display: flex; flex-direction: column; gap: 8px; width: 100%; margin-top: 12px;"></div>
+                <p style="font-size: 0.82rem; color: #94a3b8; margin-top: 12px; line-height: 1.4;">Without your journal, these moments would have faded. Today, they're right here.</p>
+            </div>
+
+            <!-- Slide 11: Finale & Share Card -->
+            <div class="wrapped-slide" id="wrappedSlide11">
+                <div class="wrapped-pill">🎉 That's a Wrap!</div>
+                <h2 class="wrapped-hero-title" style="font-size: 1.85rem;">A Year to be<br><span class="wrapped-gradient-text">Proud of.</span></h2>
+                
+                <div style="background: rgba(15, 23, 42, 0.75); border: 1px solid rgba(255,255,255,0.15); border-radius: 20px; padding: 18px; margin: 12px 0; text-align: left;">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                        <img src="logo.png" style="width: 32px; height: 32px; border-radius: 8px;">
+                        <div>
+                            <div style="font-weight: 700; font-size: 0.95rem; color: #fff;">MemStore Wrapped</div>
+                            <div style="font-size: 0.75rem; color: var(--muted);" id="wrappedCardYear">365-Day Journal Recap</div>
+                        </div>
+                    </div>
+                    <div id="wrappedCardSummary" style="font-size: 0.88rem; color: #cbd5e1; line-height: 1.45;"></div>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 8px; width: 100%; margin-top: 8px;">
+                    <button class="primary-btn" onclick="shareWrappedSummary()" style="background: linear-gradient(135deg, #6366f1, #ec4899); border: none; font-weight: 700; padding: 13px;">
+                        📤 Share Your Wrapped
+                    </button>
+                    <button class="secondary-btn" onclick="closeMemStoreWrapped(); startDayByDay();" style="padding: 11px;">
+                        📖 Browse All 365 Days
+                    </button>
+                    <button class="secondary-btn" onclick="showWrappedSlide(0)" style="padding: 9px; font-size: 0.82rem; color: var(--muted);">
+                        🔁 Replay From Start
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FLOATING ALWAYS-ON DEV DOCK -->
+    <div id="wrappedDevDock" style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 999999; display: flex; align-items: center; gap: 8px; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1.5px solid rgba(255, 255, 255, 0.25); padding: 6px 14px; border-radius: 999px; box-shadow: 0 10px 30px rgba(0,0,0,0.8), 0 0 25px rgba(99,102,241,0.4);">
+        <button onclick="launchWrappedWithWarpIntro(false)" style="background: linear-gradient(135deg, #6366f1, #ec4899); color: #fff; border: none; padding: 8px 16px; border-radius: 999px; font-weight: 800; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(236,72,153,0.3); font-family: inherit;">
+            ✨ Play My Wrapped
+        </button>
+        <button onclick="openWrappedStudio()" style="background: linear-gradient(135deg, #0ea5e9, #6366f1); color: #fff; border: none; padding: 8px 14px; border-radius: 999px; font-weight: 700; font-size: 0.82rem; cursor: pointer; display: flex; align-items: center; gap: 5px; font-family: inherit;">
+            🛠️ Lab
+        </button>
+        <button onclick="launchWrappedWithWarpIntro(true)" style="background: rgba(255,255,255,0.12); color: #cbd5e1; border: 1px solid rgba(255,255,255,0.2); padding: 8px 12px; border-radius: 999px; font-weight: 600; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 4px; font-family: inherit;">
+            🎭 Demo
+        </button>
+    </div>
+
 </body>
 </html>
