@@ -2294,8 +2294,10 @@ will-change: transform, opacity;
         }
 	async function handleSignOut() {
             if (confirm("Do you want to log out of MemStore?")) {
-                // Automatically download a backup before wiping the active cloud connection
-                await exportBackup();
+                if (window.AndroidAuth && typeof window.AndroidAuth.signOut === 'function') {
+                    window.AndroidAuth.signOut();
+                }
+                try { await exportBackup(); } catch (_) {}
                 auth.signOut().then(() => console.log("User signed out."));
             }
         }
@@ -2319,13 +2321,48 @@ will-change: transform, opacity;
 
             if (auth.currentUser) return alert(`You are already connected as ${auth.currentUser.displayName}!`);
             
-            // Automatically download a backup of local data before connecting to the cloud
-            await exportBackup();
+            // Attempt safety backup before cloud sync
+            try { await exportBackup(); } catch (_) {}
 
+            // 1. Android Native Google Sign-In Bridge (1-Tap System Bottom Sheet)
+            if (window.AndroidAuth && typeof window.AndroidAuth.signIn === 'function') {
+                syncBtn.innerHTML = 'Signing in...';
+                syncBtn.disabled = true;
+
+                window.__onNativeGoogleSignInSuccess = async (idToken) => {
+                    try {
+                        const credential = firebase.auth.GoogleAuthProvider.credential(idToken);
+                        const result = await auth.signInWithCredential(credential);
+                        enableCloudSync(result.user, true);
+                    } catch (err) {
+                        console.error("Native Google sign-in credential failed:", err);
+                        alert("Sign in failed: " + (err.message || "Invalid credentials"));
+                        syncBtn.innerHTML = originalText;
+                        syncBtn.disabled = false;
+                    }
+                };
+
+                window.__onNativeGoogleSignInFailure = (err) => {
+                    console.warn("Native Google sign-in cancelled or failed:", err);
+                    syncBtn.innerHTML = originalText;
+                    syncBtn.disabled = false;
+                    if (err && !err.includes("12501") && !err.toLowerCase().includes("cancel")) {
+                        alert("Google Sign-In note: " + err);
+                    }
+                };
+
+                window.AndroidAuth.signIn();
+                return;
+            }
+
+            // 2. Standard Web Browser Popup
             const provider = new firebase.auth.GoogleAuthProvider();
             auth.signInWithPopup(provider).then((result) => {
                 enableCloudSync(result.user, true);
-            }).catch((error) => alert("Sign in failed. Please try again."));
+            }).catch((error) => {
+                console.error("Web popup sign-in error:", error);
+                alert("Sign in failed. Please try again.");
+            });
         }
         async function saveMemoriesToCloud() {
             const user = auth.currentUser;
