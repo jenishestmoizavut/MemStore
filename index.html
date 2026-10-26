@@ -1360,15 +1360,62 @@ will-change: transform, opacity;
             return true;
         }
 
+        function authenticateWithNativeBiometrics(title = "MemStore App Lock", subtitle = "Confirm your fingerprint or face to continue") {
+            return new Promise((resolve) => {
+                const callbackId = "bio_" + Date.now() + "_" + Math.floor(Math.random() * 10000);
+
+                window.__onBiometricResult = function(id, success, err) {
+                    if (id === callbackId) {
+                        delete window.__onBiometricResult;
+                        if (success) {
+                            resolve(true);
+                        } else {
+                            console.warn('[Biometric] Native unlock cancelled or failed:', err);
+                            resolve(false);
+                        }
+                    }
+                };
+
+                try {
+                    window.AndroidBiometric.authenticate(title, subtitle, callbackId);
+                } catch (e) {
+                    console.error('[Biometric] Error invoking AndroidBiometric.authenticate:', e);
+                    resolve(false);
+                }
+            });
+        }
+
         async function platformAuthAvailable() {
+            // 1. Android Native Biometric Bridge (Fingerprint / Face Unlock / PIN)
+            if (window.AndroidBiometric && typeof window.AndroidBiometric.isAvailable === 'function') {
+                try {
+                    return window.AndroidBiometric.isAvailable();
+                } catch (e) {
+                    console.warn('[Biometric] AndroidBiometric.isAvailable error:', e);
+                }
+            }
+
+            // 2. Web Browser WebAuthn Platform Authenticator (Windows Hello / Touch ID / Face ID)
             try {
-                return !!(window.PublicKeyCredential &&
-                    PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable &&
-                    await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable());
-            } catch { return false; }
+                if (window.PublicKeyCredential && PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable) {
+                    return await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+                }
+            } catch (e) {
+                console.warn('[Biometric] WebAuthn platform authenticator check error:', e);
+            }
+            return false;
         }
 
         async function registerBiometric() {
+            // Android Native Biometric Setup
+            if (window.AndroidBiometric && typeof window.AndroidBiometric.authenticate === 'function') {
+                const ok = await authenticateWithNativeBiometrics("Set Up App Lock", "Verify your fingerprint or face to enable App Lock");
+                if (!ok) throw new Error("Biometric authentication cancelled or failed");
+                localStorage.setItem(LOCK_CRED_KEY, "native_android_biometric");
+                return;
+            }
+
+            // WebAuthn for Web Browsers (Windows Hello, Touch ID, Face ID)
             const challenge = crypto.getRandomValues(new Uint8Array(32));
             const userId = crypto.getRandomValues(new Uint8Array(16));
             const cred = await navigator.credentials.create({
@@ -1386,6 +1433,12 @@ will-change: transform, opacity;
         }
 
         async function verifyBiometric() {
+            // Android Native Biometric Verification
+            if (window.AndroidBiometric && typeof window.AndroidBiometric.authenticate === 'function') {
+                return await authenticateWithNativeBiometrics("Unlock MemStore", "Confirm your fingerprint or face to view your memories");
+            }
+
+            // WebAuthn for Web Browsers
             const credId = localStorage.getItem(LOCK_CRED_KEY);
             if (!credId) throw new Error('No biometric registered');
             const challenge = crypto.getRandomValues(new Uint8Array(32));
@@ -1406,7 +1459,8 @@ will-change: transform, opacity;
                 checkbox.checked = false; // don't flip visually until setup actually completes
                 await runLockSetup();
             } else {
-                if (!confirm('Turn off App Lock? Anyone who opens this browser will be able to read your memories.')) {
+                const ok = await showAppConfirm("Turn off App Lock? Anyone who opens this device will be able to read your memories.", "Disable App Lock", "🛡️", "Turn Off", "Keep Lock");
+                if (!ok) {
                     checkbox.checked = true;
                     return;
                 }
@@ -1426,8 +1480,8 @@ will-change: transform, opacity;
             const on = isLockEnabled();
             input.checked = on;
             sub.textContent = on
-                ? 'Enabled - Face ID / fingerprint is required to open MemStore'
-                : 'Require Face ID / fingerprint to open MemStore';
+                ? 'Enabled - Fingerprint or Face ID is required to open MemStore'
+                : 'Require fingerprint or Face ID to open MemStore';
 
             const subRow = document.getElementById('lockSubTriggers');
             if (subRow) {
@@ -1445,25 +1499,24 @@ will-change: transform, opacity;
         }
 
         async function runLockSetup() {
-            // Biometric-only: no PIN fallback exists, so App Lock requires a working
-            // platform authenticator (Face ID / Touch ID / Windows Hello / fingerprint).
             if (!(await platformAuthAvailable())) {
-                alert("Your device or browser doesn't support Face ID / fingerprint unlock, so App Lock isn't available right now.");
+                showAppAlert("Your device doesn't have biometric hardware enrolled (fingerprint or face unlock), so App Lock isn't available.", "Security", "🛡️");
                 return;
             }
-            if (!confirm('This will require Face ID / fingerprint to open MemStore. Continue?')) return;
+            const confirmOk = await showAppConfirm("This will require your fingerprint or face to open MemStore. Continue?", "Set Up App Lock", "🛡️", "Continue", "Cancel");
+            if (!confirmOk) return;
 
             try {
                 await registerBiometric();
             } catch (e) {
                 console.warn('Biometric registration failed or was cancelled:', e);
-                alert("Couldn't set up Face ID / fingerprint (cancelled or not available). App Lock was not enabled.");
+                showAppAlert("Couldn't set up biometric lock (cancelled or not recognized). App Lock was not enabled.", "Security", "⚠️");
                 return;
             }
 
             localStorage.setItem(LOCK_ENABLED_KEY, 'true');
             refreshLockToggleUI();
-            alert('App Lock is on. Unlock with Face ID / fingerprint.');
+            showAppAlert("App Lock is on! Your memories are now protected by your fingerprint/face.", "App Lock Enabled", "🛡️");
         }
 
         // --- The actual unlock gate shown at boot ---
