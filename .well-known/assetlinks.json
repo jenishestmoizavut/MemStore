@@ -1,8 +1,12 @@
-[{
-      "relation": ["delegate_permission/common.handle_all_urls"],
-      "target": {
-        "namespace": "android_app",
-        "package_name": "io.github.jenishestmoizavut.memstore",
-        "sha256_cert_fingerprints": ["74:41:C5:34:AD:3C:5E:7C:8C:EB:51:53:41:34:48:C8:9E:7B:5D:2B:4C:6E:7E:2E:46:56:61:58:7A:C9:EF:F8"]
-      }
-    }]
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.jenish.memstore",
+      "sha256_cert_fingerprints": [
+        "E7:89:18:1F:99:E6:A7:AC:A8:51:D3:6A:EA:A8:26:47:33:86:F2:63:5D:2D:35:19:4F:D8:DC:7A:EF:9B:E3:0B"
+      ]
+    }
+  }
+]
