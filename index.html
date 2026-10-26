@@ -1360,19 +1360,25 @@ will-change: transform, opacity;
             return true;
         }
 
-        function authenticateWithNativeBiometrics(title = "MemStore App Lock", subtitle = "Confirm your fingerprint or face to continue") {
+        function authenticateWithNativeBiometrics(title = "MemStore App Lock", subtitle = "Confirm your fingerprint or screen lock to continue") {
             return new Promise((resolve) => {
                 const callbackId = "bio_" + Date.now() + "_" + Math.floor(Math.random() * 10000);
 
+                window.__biometricCallbacks = window.__biometricCallbacks || {};
+                window.__biometricCallbacks[callbackId] = (success, err) => {
+                    if (success) {
+                        resolve(true);
+                    } else {
+                        console.warn('[Biometric] Native unlock cancelled or failed:', err);
+                        resolve(false);
+                    }
+                };
+
                 window.__onBiometricResult = function(id, success, err) {
-                    if (id === callbackId) {
-                        delete window.__onBiometricResult;
-                        if (success) {
-                            resolve(true);
-                        } else {
-                            console.warn('[Biometric] Native unlock cancelled or failed:', err);
-                            resolve(false);
-                        }
+                    if (window.__biometricCallbacks && window.__biometricCallbacks[id]) {
+                        const cb = window.__biometricCallbacks[id];
+                        delete window.__biometricCallbacks[id];
+                        cb(success, err);
                     }
                 };
 
@@ -1380,6 +1386,7 @@ will-change: transform, opacity;
                     window.AndroidBiometric.authenticate(title, subtitle, callbackId);
                 } catch (e) {
                     console.error('[Biometric] Error invoking AndroidBiometric.authenticate:', e);
+                    delete window.__biometricCallbacks[callbackId];
                     resolve(false);
                 }
             });
@@ -3286,8 +3293,19 @@ will-change: transform, opacity;
         // --- CUSTOM AESTHETIC MODAL CONTROLLER ---
         let customDialogCallback = null;
 
+        function closeAppDialog() {
+            const overlay = document.getElementById('customDialogOverlay');
+            if (overlay) overlay.classList.remove('active');
+            if (customDialogCallback) {
+                const cb = customDialogCallback;
+                customDialogCallback = null;
+                cb(false);
+            }
+        }
+
         function showAppAlert(msg, title = "MemStore", icon = "✨") {
             return new Promise((resolve) => {
+                const overlay = document.getElementById('customDialogOverlay');
                 document.getElementById('customDialogIcon').textContent = icon;
                 document.getElementById('customDialogTitle').textContent = title;
                 document.getElementById('customDialogMsg').textContent = msg;
@@ -3296,19 +3314,30 @@ will-change: transform, opacity;
                 const okBtn = document.getElementById('customDialogOkBtn');
                 okBtn.textContent = 'OK';
 
-                customDialogCallback = resolve;
-
-                okBtn.onclick = () => {
-                    closeAppDialog();
-                    resolve(true);
+                let settled = false;
+                customDialogCallback = (val) => {
+                    if (!settled) {
+                        settled = true;
+                        resolve(val !== undefined ? val : true);
+                    }
                 };
 
-                document.getElementById('customDialogOverlay').classList.add('active');
+                okBtn.onclick = () => {
+                    customDialogCallback = null;
+                    if (overlay) overlay.classList.remove('active');
+                    if (!settled) {
+                        settled = true;
+                        resolve(true);
+                    }
+                };
+
+                if (overlay) overlay.classList.add('active');
             });
         }
 
         function showAppConfirm(msg, title = "MemStore", icon = "❓", okText = "Continue", cancelText = "Cancel") {
             return new Promise((resolve) => {
+                const overlay = document.getElementById('customDialogOverlay');
                 document.getElementById('customDialogIcon').textContent = icon;
                 document.getElementById('customDialogTitle').textContent = title;
                 document.getElementById('customDialogMsg').textContent = msg;
@@ -3320,27 +3349,33 @@ will-change: transform, opacity;
                 const okBtn = document.getElementById('customDialogOkBtn');
                 okBtn.textContent = okText;
 
-                customDialogCallback = resolve;
+                let settled = false;
+                customDialogCallback = (val) => {
+                    if (!settled) {
+                        settled = true;
+                        resolve(val !== undefined ? val : false);
+                    }
+                };
 
                 okBtn.onclick = () => {
-                    closeAppDialog();
-                    resolve(true);
+                    customDialogCallback = null;
+                    if (overlay) overlay.classList.remove('active');
+                    if (!settled) {
+                        settled = true;
+                        resolve(true);
+                    }
                 };
                 cancelBtn.onclick = () => {
-                    closeAppDialog();
-                    resolve(false);
+                    customDialogCallback = null;
+                    if (overlay) overlay.classList.remove('active');
+                    if (!settled) {
+                        settled = true;
+                        resolve(false);
+                    }
                 };
 
-                document.getElementById('customDialogOverlay').classList.add('active');
+                if (overlay) overlay.classList.add('active');
             });
-        }
-
-        function closeAppDialog() {
-            document.getElementById('customDialogOverlay').classList.remove('active');
-            if (customDialogCallback) {
-                customDialogCallback(false);
-                customDialogCallback = null;
-            }
         }
 
         // Seamlessly override window.alert so all system alerts use the dark aesthetic modal
