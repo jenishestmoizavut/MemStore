@@ -827,6 +827,161 @@ will-change: transform, opacity;
         cursor: pointer;
     }
 
+
+    /* =========================================
+       ON THIS DAY FLASHBACK BANNER & MODAL
+       ========================================= */
+    .on-this-day-banner {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.18), rgba(168, 85, 247, 0.18));
+        border: 1px solid rgba(168, 85, 247, 0.4);
+        border-radius: 14px;
+        padding: 12px 14px;
+        margin: 12px 0 16px 0;
+        cursor: pointer;
+        box-shadow: 0 4px 20px rgba(99, 102, 241, 0.15);
+        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        text-align: left;
+    }
+    .on-this-day-banner:hover, .on-this-day-banner:active {
+        transform: translateY(-2px);
+        border-color: rgba(168, 85, 247, 0.7);
+        box-shadow: 0 6px 25px rgba(168, 85, 247, 0.3);
+    }
+    .otd-icon-badge {
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        flex-shrink: 0;
+    }
+    .otd-text-wrap {
+        flex: 1;
+        min-width: 0;
+    }
+    .otd-title {
+        font-size: 0.92rem;
+        font-weight: 700;
+        color: #fff;
+        letter-spacing: -0.2px;
+    }
+    .otd-preview {
+        font-size: 0.8rem;
+        color: #cbd5e1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        margin-top: 2px;
+    }
+    .otd-action-arrow {
+        color: #94a3b8;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        transition: transform 0.2s ease;
+    }
+    .on-this-day-banner:hover .otd-action-arrow {
+        transform: translateX(3px);
+        color: #fff;
+    }
+
+    .on-this-day-card {
+        background: #0f172a;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        border-radius: 22px;
+        padding: 22px;
+        width: 100%;
+        max-width: 420px;
+        max-height: 82vh;
+        overflow-y: auto;
+        box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.9), 0 0 40px rgba(99, 102, 241, 0.25);
+        transform: scale(0.92);
+        transition: transform 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+        box-sizing: border-box;
+    }
+    .custom-dialog-overlay.active .on-this-day-card {
+        transform: scale(1);
+    }
+    .otd-modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .otd-modal-date {
+        font-size: 0.82rem;
+        color: #94a3b8;
+        margin-top: 2px;
+    }
+    .otd-close-btn {
+        background: rgba(255, 255, 255, 0.08);
+        border: none;
+        color: #cbd5e1;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        cursor: pointer;
+        font-size: 0.95rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.2s ease;
+    }
+    .otd-close-btn:hover {
+        background: rgba(255, 255, 255, 0.18);
+        color: #fff;
+    }
+    .otd-memories-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+    .otd-memory-item {
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 14px;
+        padding: 14px 16px;
+        text-align: left;
+    }
+    .otd-item-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 8px;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+    .otd-year-badge {
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        background: rgba(99, 102, 241, 0.25);
+        color: #c7d2fe;
+        padding: 3px 8px;
+        border-radius: 6px;
+    }
+    .otd-item-quote {
+        font-size: 0.94rem;
+        line-height: 1.55;
+        color: #f1f5f9;
+        font-style: italic;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+    .otd-time-tag {
+        font-size: 0.72rem;
+        color: #94a3b8;
+    }
+
 </style>
 </head>
 <body>
@@ -982,6 +1137,19 @@ will-change: transform, opacity;
                 <input type="color" id="colorPicker" value="#6366f1" oninput="applyCustomColor(this.value)">
             </div>
         </div>
+
+        <!-- ON THIS DAY FLASHBACK BANNER -->
+        <div id="onThisDayBanner" class="on-this-day-banner" style="display: none;" onclick="openOnThisDayModal()">
+            <div class="otd-icon-badge">✨</div>
+            <div class="otd-text-wrap">
+                <div class="otd-title" id="otdBannerTitle">On This Day · 1 Year Ago</div>
+                <div class="otd-preview" id="otdBannerPreview">View your past memory from today...</div>
+            </div>
+            <div class="otd-action-arrow">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </div>
+        </div>
+
 
         <div class="progress-container"><div class="progress-bar" id="progressBar"></div></div>
         <div class="progress-text" id="progressText">Day 0 of 365</div>
@@ -1860,6 +2028,7 @@ will-change: transform, opacity;
             }
             openEditor(daysPassed > 365 ? finalDateStr : todayStr);
             updateFinalPrompt();
+            refreshOnThisDayUI();
         }
 
         function openEditor(dateStr) {
@@ -3378,6 +3547,109 @@ will-change: transform, opacity;
             });
         }
 
+        
+        // --- ON THIS DAY FLASHBACK ENGINE ---
+        function getOnThisDayMemories(targetDateStr = null) {
+            if (!archives || !archives.length) return [];
+            const dateStr = targetDateStr || getDateKey();
+            const mmdd = dateStr.slice(5); // e.g. "10-27"
+            const currentYear = parseInt(dateStr.slice(0, 4), 10);
+            const results = [];
+
+            archives.forEach(capsule => {
+                if (!capsule || !capsule.entries) return;
+                Object.keys(capsule.entries).forEach(key => {
+                    if (key.slice(5) === mmdd && capsule.entries[key] && capsule.entries[key].trim()) {
+                        const year = parseInt(key.slice(0, 4), 10);
+                        const yearsAgo = Math.max(1, currentYear - year);
+                        results.push({
+                            dateKey: key,
+                            year: year,
+                            yearsAgo: yearsAgo,
+                            label: capsule.label || `${year}`,
+                            text: capsule.entries[key].trim(),
+                            starred: !!(capsule.starred && capsule.starred[key]),
+                            timestamp: capsule.timestamps ? capsule.timestamps[key] : null
+                        });
+                    }
+                });
+            });
+
+            results.sort((a, b) => b.year - a.year);
+            return results;
+        }
+
+        function refreshOnThisDayUI() {
+            const banner = document.getElementById('onThisDayBanner');
+            if (!banner) return;
+            const memories = getOnThisDayMemories();
+            if (!memories.length) {
+                banner.style.display = 'none';
+                return;
+            }
+
+            const titleEl = document.getElementById('otdBannerTitle');
+            const prevEl = document.getElementById('otdBannerPreview');
+
+            const count = memories.length;
+            if (count === 1) {
+                const m = memories[0];
+                const agoText = m.yearsAgo === 1 ? '1 Year Ago' : `${m.yearsAgo} Years Ago`;
+                titleEl.textContent = `On This Day · ${agoText} (${m.year})`;
+                prevEl.textContent = `"${m.text.slice(0, 65)}${m.text.length > 65 ? '...' : ''}"`;
+            } else {
+                titleEl.textContent = `On This Day · ${count} Past Memories`;
+                prevEl.textContent = `Memories from ${memories.map(m => m.year).join(', ')}`;
+            }
+
+            banner.style.display = 'flex';
+        }
+
+        async function openOnThisDayModal() {
+            if (isLockEnabled() && isLockOnArchivesEnabled()) {
+                const ok = await requireReauth("Unlock to view past memories", isLockOnArchivesEnabled);
+                if (!ok) return;
+            }
+
+            const memories = getOnThisDayMemories();
+            if (!memories.length) return;
+
+            const listEl = document.getElementById('otdMemoriesList');
+            const dateEl = document.getElementById('otdModalDate');
+
+            const todayDate = new Date();
+            const dateFormatted = todayDate.toLocaleDateString(undefined, { month: 'long', day: 'numeric' });
+            dateEl.textContent = dateFormatted;
+
+            listEl.innerHTML = memories.map(m => {
+                const safeText = m.text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                const agoLabel = m.yearsAgo === 1 ? '1 Year Ago' : `${m.yearsAgo} Years Ago`;
+                const timeHtml = m.timestamp ? `<span class="otd-time-tag">${m.timestamp}</span>` : '';
+                const starHtml = m.starred ? `<span class="star-pill" style="font-size: 0.72rem; padding: 2px 7px; background: rgba(245, 158, 11, 0.2); border: 1px solid rgba(245, 158, 11, 0.4); color: #fcd34d; border-radius: 999px;">⭐ Golden Moment</span>` : '';
+
+                return `
+                    <div class="otd-memory-item">
+                        <div class="otd-item-header">
+                            <span class="otd-year-badge">${agoLabel} · ${m.year}</span>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                ${starHtml}
+                                ${timeHtml}
+                            </div>
+                        </div>
+                        <div class="otd-item-quote">"${safeText}"</div>
+                    </div>
+                `;
+            }).join('');
+
+            const modal = document.getElementById('onThisDayModal');
+            if (modal) modal.classList.add('active');
+        }
+
+        function closeOnThisDayModal() {
+            const modal = document.getElementById('onThisDayModal');
+            if (modal) modal.classList.remove('active');
+        }
+
         // Seamlessly override window.alert so all system alerts use the dark aesthetic modal
         window.alert = function(msg) {
             let icon = "✨";
@@ -3587,6 +3859,31 @@ will-change: transform, opacity;
             <div class="custom-dialog-actions" id="customDialogActions">
                 <button class="secondary-btn" id="customDialogCancelBtn" style="display: none;">Cancel</button>
                 <button class="primary-btn" id="customDialogOkBtn">OK</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ON THIS DAY MODAL -->
+    <div id="onThisDayModal" class="custom-dialog-overlay" role="dialog" aria-modal="true">
+        <div class="on-this-day-card">
+            <div class="otd-modal-header">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 1.5rem;">🕰️</span>
+                    <div>
+                        <h2 style="margin: 0; font-size: 1.25rem; font-family: 'Outfit', sans-serif; font-weight: 800; color: #f8fafc;">On This Day</h2>
+                        <div class="otd-modal-date" id="otdModalDate">October 27</div>
+                    </div>
+                </div>
+                <button type="button" class="otd-close-btn" onclick="closeOnThisDayModal()" aria-label="Close">✕</button>
+            </div>
+
+            <div class="otd-memories-list" id="otdMemoriesList">
+                <!-- Dynamically populated memory cards -->
+            </div>
+
+            <div style="margin-top: 18px; text-align: center;">
+                <button class="primary-btn" onclick="closeOnThisDayModal()" style="width: 100%;">Back to Today</button>
             </div>
         </div>
     </div>
